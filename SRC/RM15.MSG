@@ -1,0 +1,15 @@
+[messages for room 15 -- rm.playground.north
+
+
+%message	16	
+"Put your toy down before you leave."
+
+%message	17	
+"You can't climb a tree carrying that around!"
+
+%message	18	
+"Please move away from the tree, and then drop your toy."
+
+%message	19	
+"There's not enough room to play with the tetherball here."
+

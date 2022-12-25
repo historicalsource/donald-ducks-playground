@@ -1,0 +1,13 @@
+[messages for room 13 -- rm.minnie.store
+
+%message	19	"\"I don't have that any more,\" says Minnie.
+  \"Remember?  You bought it.\""
+%message	20	"\"Hello,\" says Minnie.  \"Walk to the item you want.
+  Press the button to take it.  Pay me for it over here.\""
+%message	21	"\"You need to be closer to choose a toy,\" says Minnie."
+%message	22	"\"You've already bought everything in my store,\" says
+ Minnie.  \"Try Mickey's or Goofy's store.\""
+%message	23	"Please pay Minnie before leaving her store."
+%message	24	"Before you take another toy, pay for what you have."
+%message	25	"Pay Minnie for your toy, or return it."
+

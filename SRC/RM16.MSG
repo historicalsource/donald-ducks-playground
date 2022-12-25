@@ -1,0 +1,12 @@
+[messages for room 16 -- rm.pg.west -- rocket bottom
+
+
+%message	16	
+"Put your toy down before you leave."
+
+%message	17	
+"You can't climb a ladder while carrying a toy!"
+
+%message	18	
+"There's not enough room here to play on the old box."
+

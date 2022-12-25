@@ -1,0 +1,35 @@
+[
+[   word list -- Donald Duck's Playground
+[
+[	June 22, 1987
+[
+[
+[.d was formerly .define
+[.s	"	 "	  .synonym
+[.i	"	 "	  .ignore
+[
+
+
+[.d	anyword			1
+.d   look                2
+.d   show                3
+.d   tp                  4
+.d   quit                5
+.d   position            6
+.d   slow                7
+.d   normal              8
+.d	halffast			9
+.d   fast                10
+.d   priority            11
+.d   sp                  12
+.d   restart             13
+.d   get                 14
+.d   set                 15
+.d   flag                16
+.d   object              17
+.d   sf                  18
+.d	var				19
+.d	reset			20
+.d	room				21
+.s	al				quit
+

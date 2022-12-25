@@ -1,0 +1,29 @@
+[messages for room 14 -- rm.change
+
+
+%message	16	"Your purchases will be delivered."
+%message	17	"Please pay for your purchases now."
+%message	18	"You paid "
+%message	19	"Thank you.  Please make change."
+%message	20	"Press the \"T\" Total Key when done."
+%message	21	"Press button to leave."
+%message	22	"You don't have enough money!"
+%message	23	"You owe "
+%message	24	"You have "
+%message	25	"Sorry.\n\nNo Sale!"
+
+%message	26	"Sorry, but we have no more "
+%message	27	".  Please return some to the register."
+
+%message	31	"%m26pennies%m27"
+%message	32	"%m26nickels%m27"
+%message	33	"%m26dimes%m27"
+%message	34	"%m26quarters%m27"
+%message	35	"%m26%m38%m27"
+%message	36	"%m26five-%m38%m27"
+%message	37	"%m26ten-%m38%m27"
+%message	38	"dollar bills"
+%message	39	
+"When you are done, move the arrow to the register \"T\" Total
+ Key and press the button."
+

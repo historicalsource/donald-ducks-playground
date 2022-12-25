@@ -1,0 +1,281 @@
+[logics for room 19 -- rm.pg.south -- crossing the tracks
+
+%include "gamedefs"
+%include "rm19.msg"
+
+
+%define	looking.for.train.time	22	[	Length of Don's look left & right
+%define	handcar.y				115	[	Where the tracks are
+%define	at.road				35	[	Handcar.arrived values
+%define	past.road				105
+
+
+%define	crossing.tracks		lf0
+%define	ego.across.tracks		lf1
+%define	stop.cycling.ego		lf2
+%define	music.done			lf3
+%define	handcar.on.screen		lf4
+%define	ego.arrived			lf5
+
+
+%define	handcar.location		lcl0
+
+%define	handcar.timer			timer.1
+%define	looking.timer			timer.2
+%define	looking.timer.2		wait.1
+
+
+%object	a.handcar			obj.8	[	800	700	110v-112
+%object	a.rr.signal		obj.3	[	300	202	111v
+
+
+if (init.log)
+	{
+	set.horizon( 60);
+	speed = halffast;
+
+	load.view( v.ego);
+	set.view( ego, v.ego);
+
+	random( 1, 4, work);				[	25% chance of seeing the nephews
+	if (force.a.test)
+		{
+		work = 1;
+		}
+
+	if (demo)
+		{
+		work = 0;
+		}
+
+	if (work == 1)
+		{
+		load.view( v.handcar);
+		load.view( v.handcar.waving);
+		load.sound( s.rr.signal);
+		animate.obj( a.handcar);
+		position( a.handcar, 2, handcar.y);
+		set.view( a.handcar, v.handcar);
+		ignore.objs( a.handcar);
+		ignore.blocks( a.handcar);
+		random( 80, 120, handcar.timer);
+		work = 2;
+		cycle.frequency( a.handcar, work);
+		}
+
+	load.view( v.rr.signal);
+	load.sound( m.menu);
+	set( music.done);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	animate.obj( a.rr.signal);
+	position( a.rr.signal, 93, 115);
+	set.view( a.rr.signal, v.rr.signal);
+	last.cel( a.rr.signal, work);
+	set.cel.f( a.rr.signal, work);		[	To turn lights off.
+	ignore.objs( a.rr.signal);
+	stop.cycling( a.rr.signal);
+	set.priority( a.rr.signal, 12);
+	draw( a.rr.signal);
+	set( next.frame);
+
+	if (previous.room == rm.pg.central)
+		{
+		position( ego, 63, 65);
+		handcar.timer = 0;
+		}
+	else
+		{
+		position( ego, 156, 156);
+		}
+
+	if (demo)
+		{
+		ego.location = 0;
+		position( ego, 147, 166);
+		display( 22, 0, 16);
+		display( 23, 0, 17);
+		display( 24, 0, 18);
+		move.obj( ego, 87, 166, 0, ego.arrived);
+		}
+
+	draw( ego);
+	show.pic( );
+	return( );
+
+	}
+
+
+if (next.frame)
+	{
+	reset( next.frame);
+	stop.update( a.rr.signal);
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (demo)
+	{
+	goto exit;
+	}
+
+
+				[	Here's the 3 nephews pumping their way past Don.
+
+if  (ego.y < 135 && 				[	Just in case he gets close 
+	handcar.timer > 22)				[	enough to the handcar to get hit.
+	{
+	handcar.timer = 22;
+	}
+
+--handcar.timer;					[	Handle the handcar.
+if (handcar.timer == 21)
+	{
+	reset( music.done);
+	stop.sound( );
+	sound( s.rr.signal, music.done);
+	start.update( a.rr.signal);
+	start.cycling( a.rr.signal);
+	set( handcar.on.screen);
+	program.control( );
+	stop.motion( ego);
+	stop.update( ego);
+	}
+
+if (handcar.timer == 1)
+	{
+	draw( a.handcar);
+	move.obj( a.handcar, 154, handcar.y, 0, done);
+	}
+
+if (handcar.on.screen)
+	{
+	get.posn( a.handcar, handcar.location, work);
+	if (handcar.location == at.road)
+		{
+		set.view( a.handcar, v.handcar.waving);
+		}
+	else
+		{
+		if (handcar.location == past.road)
+			{
+			set.view( a.handcar, v.handcar);
+			}
+		else
+			{	
+			if (edge.obj.hit)
+				{
+				erase( a.handcar);
+				reset( handcar.on.screen);
+				last.cel( a.rr.signal, work);
+				set.cel.f( a.rr.signal, work);	[	To turn lights off.
+				stop.cycling( a.rr.signal);
+				set( next.frame);
+
+				player.control( );
+				start.update( ego);
+				start.motion( ego);
+				stop.sound( );
+				set( music.done);
+				}
+			}
+		}
+	}
+	
+
+				[	Look both ways before you cross the tracks, Don!
+
+if (hit.special && !crossing.tracks)
+	{
+	set( crossing.tracks);
+	program.control( );
+	stop.motion( ego);
+	stop.cycling( ego);
+	reset( keep.cycling);
+	set( no.cycling);
+	set.loop( ego, facing.right);
+	looking.timer = looking.for.train.time;
+	}
+
+--looking.timer;
+if (looking.timer == 1)
+	{
+	set.loop( ego, facing.left);
+	looking.timer.2 = looking.for.train.time;
+	}
+ 
+--looking.timer.2;
+if (looking.timer.2 == 1)
+	{
+	set( keep.cycling);
+	reset( no.cycling);
+
+	if (ego.y > handcar.y)			[	Which way are we going?
+		{
+		y = 89;
+		}
+	else
+		{
+		y = 128;
+		}
+
+	step = 2;
+	move.obj.f( ego, ego.x, y, step, ego.across.tracks);
+	}
+
+if (ego.across.tracks)
+	{
+	reset( ego.across.tracks);
+	reset( crossing.tracks);
+	reset( keep.cycling);
+	player.control( );
+	}
+
+if (stop.cycling.ego)
+	{
+	reset( stop.cycling.ego);
+	reset( keep.cycling);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (music.done)
+	{
+	reset( music.done);
+	if (handcar.on.screen)
+		{
+		sound( s.rr.signal, music.done);
+		}
+	else
+		{
+		sound( m.menu, music.done);
+		}
+	}
+
+if (demo && ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+	if (ego.location == 1)
+		{
+		move.obj( ego, 63, 63, 0, ego.arrived);
+		}
+	if (ego.location == 2)
+		{
+		reset( no.script);
+		new.room( rm.pg.central);
+		}
+	}
+
+if  (edge.ego.hit == right &&
+	ego.y > handcar.y)			{reset( no.script);new.room( rm.menu.west);}
+if  (edge.ego.hit == top)		{reset( no.script);new.room( rm.pg.central);}

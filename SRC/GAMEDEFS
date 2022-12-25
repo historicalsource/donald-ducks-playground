@@ -1,0 +1,875 @@
+[
+[	gamedefs:
+[
+[				DONALD'S PLAYGROUND GAME DEFINITIONS
+[
+[	June 23, 1987
+[
+
+
+%tokens	"..\\words.tok"
+%include	"sysdefs"
+%include	"sysdefs.al"
+
+
+
+[************ NUMERALS ************]
+[No room may have messages number 0-15.
+
+%message	1					"0"
+%message	2					"1"
+%message	3					"2"
+%message	4					"3"
+%message	5					"4"
+%message	6					"5"
+%message	7					"6"
+%message	8					"7"
+%message	9					"8"
+%message	10					"9"
+%message	11					" "
+%message	12					"$"
+%message	13					"."
+%message	14					":"
+%message	15					""
+	%define	space		11			[	message number equates
+	%define	dollar		12
+	%define	period		13
+	%define	colon		14
+		
+
+
+[************ FLAGS ************]
+[Only the interpreter can use	  0-29	(globals)
+[Only dynamic logics can use	 30-39	(tmp's)
+[		Any room can use	 40-59	(lcl's)
+
+[	TEMP FLAGS	(use only in dynamic logics; reset by room 0 init.log)
+%flag	tf0						30
+%flag	tf1						31
+%flag	tf2						32
+%flag	tf3						33
+%flag	tf4						34
+%flag	tf5						35
+%flag	tf6						36
+%flag	tf7						37
+%flag	tf8						38
+%flag	tf9						39
+
+[	LOCAL FLAGS 	(use only in room logics; reset by room 0 init.logs)
+%flag	lf0						40
+%flag	lf1						41
+%flag	lf2						42
+%flag	lf3						43
+%flag	lf4						44
+%flag	lf5						45
+%flag	lf6						46
+%flag	lf7						47
+%flag	lf8						48
+%flag	lf9						49
+%flag	lf10						50
+%flag	lf11						51
+%flag	lf12						52
+%flag	lf13						53
+%flag	lf14						54
+
+[%flag	55 through 89		DON'T USE!  See note below.
+
+%flag	force.a.test				99
+%flag	debugging					100
+%flag	out.of.memory				101
+%flag	keep.cycling				102
+%flag	no.cycling				103
+%flag	ignore.special				104
+%flag	ignore.water				105
+%flag	next.frame				106
+%flag	doit			 			110
+%flag	useit					111
+%flag	going.to.menu				112
+					  
+%flag	changed.mind				160
+%flag	change.room.control			161
+%flag	move.coin					162
+%flag	add.coin.to.bankroll		163
+%flag	all.coins.moved			164
+%flag	ego.is.arrow				165
+%flag	not.used					166
+%flag	owes.for.toy.1				167
+%flag	owes.for.toy.2				168
+%flag	owes.for.toy.3				169
+%flag	owes.for.toy.4				170
+%flag	owes.for.toy.5				171
+%flag	owes.for.toy.6				172
+%flag	done						173
+%flag	sold.out					174
+%flag	sound.off					175
+%flag	demo						176
+%flag	print.cost				177
+%flag	two.button.joystick			178
+%flag	mouse.machine				179
+
+
+[	BIG NOTE:  Don't ever renumber these, because godonlyknows what logics
+[			have hard-wired pointers looking here!!!
+
+[	NOTE:  vars number 30 through 89 are reset in room 0 via indirection.
+[			renumbering will screw it up.
+
+[	also NOTE:  flags 30 through 89 are reset in room 0 via indirection,
+[			in spite of the fact that flags 55-89 are never used!!!
+[			[It seemed like a good idea at the time.]
+
+
+[************ VARS ************]
+[Only the interpreter can use	  0-19	(globals)
+[Only dynamic logics can use	 20-39	(tmp's)
+[		Any room can use	 40-89	(lcl's)
+
+[	TEMP VARS	(use only in dynamic logics; reset by room 0 init.log)
+%var		tmp0						30
+%var		tmp1						31
+%var		tmp2						32
+%var		tmp3						33
+%var		tmp4						34
+%var		tmp5						35
+%var		tmp6						36
+%var		tmp7						37
+%var		tmp8						38
+%var		tmp9						39
+
+[	LOCAL VARS 	(use only in room logics; reset by room 0 init.logs)
+%var		lcl0						40
+%var		lcl1						41
+%var		lcl2						42
+%var		lcl3						43
+%var		lcl4						44
+%var		lcl5						45
+%var		lcl6						46
+%var		lcl7						47
+%var		lcl8						48
+%var		lcl9						49
+%var		lcl10					50
+%var		lcl11					51
+%var		lcl12					52
+%var		lcl13					53
+%var		lcl14					54
+%var		lcl15					55
+%var		lcl16					56
+%var		lcl17					57
+%var		lcl18					58
+%var		lcl19					59
+%var		lcl20					60
+%var		lcl21					61
+%var		lcl22					62
+%var		lcl23					63
+%var		lcl24					64
+%var		lcl25					65
+%var		lcl26					66
+%var		lcl27					67
+%var		lcl28					68
+%var		lcl29					69
+%var		lcl30					70
+%var		lcl31					71
+%var		lcl32					72
+%var		lcl33					73
+%var		lcl34					74
+%var		lcl35					75
+%var		lcl36					76
+%var		lcl37					77
+%var		lcl38					78
+%var		lcl39					79
+%var		lcl40					80
+%var		lcl41					81
+%var		lcl42					82
+%var		lcl43					83
+%var		lcl44					84
+%var		lcl45					85
+%var		lcl46					86
+%var		lcl47					87
+%var		lcl48					88
+%var		lcl49					89
+					  
+%var		work						90
+%var		message					91
+%var		loop						92
+%var		view						93
+%var		cell						94
+%var		priority					95
+%var		x						96
+%var		y						97
+%var		ego.x					98
+%var		ego.y					99
+%var		old.ego.x					100
+%var		old.ego.y					101
+%var		source.x					102
+%var		source.y					103
+%var		target.x					104
+%var		target.y					105
+%var		debug.tmp0				106
+%var		debug.tmp1				107
+%var		debounce					108
+%var		wait.1			 		109
+%var		wait.2			 		110
+%var		timer.1			 		111
+%var		timer.2			 		112
+
+%var		changing.minutes.speed		113
+%var		speed					114
+	%define	slow				3
+	%define	normal			2
+	%define	halffast			1
+	%define	fast				0
+
+%var		level					115
+	%define	beginning			0
+	%define	intermediate		1
+	%define	advanced			2
+
+%var		current.status				116
+	%define	starting			0		[	"Current.status" values.
+	%define	paying			1
+	%define	making.change		2
+	%define	payroll			3
+	%define	all.done			4
+	%define	wants.to.quit		5
+	%define	ready.to.start		6
+	%define	waiting.to.leave	7
+	%define	times.up			8
+	%define	playing.game		9
+	[%define	10
+	%define	playing.on.toy		11
+	%define	climbing			12
+	%define	walking			13
+	%define	sliding			14
+	%define	at.top.of.ladder	15
+	%define	on.top.of.fort		16
+	%define	in.treehouse		17
+	%define	on.pulley			18
+	%define	jumping			19
+	%define	waiting.for.plane	20
+	%define	waiting.for.truck	21
+	%define	truck.in.place		22
+	%define	cleaning.up		23
+	%define	on.monkey.rope		24
+	%define	on.firemans.pole	25
+	%define	train.coming		26
+	%define	train.here		27
+	%define	train.leaving		28
+
+%var		ego.location				117
+	%define	br.penny			1		[	"ego.location" values.
+	%define	br.nickel			2
+	%define	br.dime			3
+	%define	br.quarter		4
+	%define	br.one			5
+	%define	br.five			6
+	%define	br.ten			7
+	%define	br				8
+
+	%define	cg.penny			11
+	%define	cg.nickel			12
+	%define	cg.dime			13
+	%define	cg.quarter		14
+	%define	cg.one			15
+	%define	cg.five			16
+	%define	cg.ten			17
+	%define	cg				18
+
+	%define	rg.penny			21
+	%define	rg.nickel			22
+	%define	rg.dime			23
+	%define	rg.quarter		24
+	%define	rg.one			25
+	%define	rg.five			26
+	%define	rg.ten			27
+	%define	rg.twenty			28
+	%define	rg				29
+
+	%define	total.key			31
+	
+	%define	center.line		86		[	In payroll and change rooms.
+	%define	below.line		1
+	%define	above.line		2
+
+%var		coin.being.moved			118
+	%define	penny			1		[	"coin.being.moved" values.
+	%define	nickel			2
+	%define	dime				3
+	%define	quarter			4
+	%define	one				5
+	%define	five				6
+	%define	ten				7
+
+%var		previous.store				119
+%var		previous.job				120
+%var		correct.pay				121
+%var		incorrect.pay				122
+
+%var		old.box.x					123	[	Moveable Toy locations
+%var		old.box.y					124
+%var		trampoline.x				125
+%var		trampoline.y				126
+%var		somersault.bar.x			127
+%var		somersault.bar.y			128
+%var		toy.horse.x				129
+%var		toy.horse.y				130
+%var		tetherball.pole.x			131
+%var		tetherball.pole.y			132
+%var		parallel.bars.x			133
+%var		parallel.bars.y			134
+
+%var		add.dollars				135	[	Amount to alter moneys
+%var		add.cents					136
+%var		sub.dollars				137
+%var		sub.cents					138
+%var		money.to.fix				139	[	Which money to alter
+	%define	dons.money		35
+	%define	owes.money		36
+	%define	paid.money		37
+	%define	earned.money		38
+	%define	other.money		39
+	%define	change.money		40
+
+%var		update.window				140	[also use "money.to.fix" defines
+	%define	update.all		1
+	%define	update.cost		2
+
+%var		dons.ten.dollars			141	[	Don's billfold contents
+%var		dons.dollars				142
+%var		dons.ten.cents				143
+%var		dons.cents				144
+%var		dons.money.x				145	[	where to display it
+%var		dons.money.y				146
+
+%var		owes.ten.dollars			147	[	what he owes for toys
+%var		owes.dollars				148
+%var		owes.ten.cents				149
+%var		owes.cents				150
+%var		owes.money.x				151
+%var		owes.money.y				152
+
+%var		paid.ten.dollars			153	[how much he paid before "total"
+%var		paid.dollars				154
+%var		paid.ten.cents				155
+%var		paid.cents				156
+%var		paid.money.x				157
+%var		paid.money.y				158
+
+%var		earned.ten.dollars			159	[	How much earned in last job
+%var		earned.dollars				160
+%var		earned.ten.cents			161
+%var		earned.cents				162
+%var		earned.money.x				163
+%var		earned.money.y				164
+
+%var		cost.ten.dollars			165	[	Cost of 1 toy in stores
+%var		cost.dollars				166
+%var		cost.ten.cents				167
+%var		cost.cents				168
+
+%var		work.ten.dollars			169	[	misc
+%var		work.dollars				170
+%var		work.ten.cents				171
+%var		work.cents				172
+
+%var		cost.1.dollars				173	[	Cost of toys in store
+%var		cost.2.dollars				174
+%var		cost.3.dollars				175
+%var		cost.4.dollars				176
+%var		cost.5.dollars				177
+%var		cost.6.dollars				178
+%var		cost.1.ten.cents			179
+%var		cost.2.ten.cents			180
+%var		cost.3.ten.cents			181
+%var		cost.4.ten.cents			182
+%var		cost.5.ten.cents			183
+%var		cost.6.ten.cents			184
+%var		cost.1.cents				185
+%var		cost.2.cents				186
+%var		cost.3.cents				187
+%var		cost.4.cents				188
+%var		cost.5.cents				189
+%var		cost.6.cents				190
+
+%var		ten.count					191	[	How many in Don's wallet
+%var		five.count				192
+%var		one.count					193
+%var		quarter.count				194
+%var		dime.count				195
+%var		nickel.count				196
+%var		penny.count				197
+%var		local.quarter.count			198	[	misc.
+%var		local.dime.count			199
+%var		local.nickel.count			200
+%var		local.penny.count			201
+%var		local.one.count			202
+%var		local.five.count			203
+%var		local.ten.count			204
+%var		step						205
+%var		box						206
+%var		seconds.in.room			207
+%var		old.seconds.in.room			208
+%var		test.room					209
+%var		old.ego.dir				210
+
+%var		debug.0					254
+%var		debug.1					255
+	
+
+
+[************* CONSTANTS ************]
+	[Toy numbers (also equal toy view #s w/kid and toy w/o kid view #s -100)
+	%define	ladder			21		[	from Goofy's store
+	%define	pulley			22
+	%define	tire				23
+	%define	old.box			24	
+	%define	slide			25
+	%define	firemans.pole		26
+	%define	rope				27		[	from Mickey's store
+	%define	trapeze			28
+	%define	ships.wheel		29
+	%define	trampoline		30
+	%define	catwalk			31
+	%define	somersault.bar		32
+	%define	swing			33		[	from Minnie's store
+	%define	spaceship.ladder	34
+	%define	rings			35
+	%define	toy.horse			36
+	%define	tetherball.pole	37
+	%define	parallel.bars		38
+	%define	cashier			101
+
+	[money X,Y coordinates:
+	%define	br.y				166		[	Bankroll
+	%define	br.pile.y			122
+	%define	br.y.top			129
+	%define	br.quarter.x		51 		[NOTE:
+	%define	br.quarter.x.right	62		[	BR = bankroll
+	%define	br.dime.x			67		[	CG = change
+	%define	br.dime.x.right	75		[  &	RG = register
+	%define	br.nickel.x		82		[	   . . .throughout the game.
+	%define	br.nickel.x.right	91
+	%define	br.penny.x		97
+	%define	br.penny.x.right	105
+	%define	br.one.x			112
+	%define	br.one.x.right		124
+	%define	br.five.x			127
+	%define	br.five.x.right	139
+	%define	br.ten.x			142
+	%define	br.ten.x.right		154
+							
+	%define	cg.y				72		[	Change piles.
+	%define	cg.pile.y			28
+	%define	cg.y.top			30
+	%define	cg.quarter.x		 2
+	%define	cg.quarter.x.right	13
+	%define	cg.dime.x			17
+	%define	cg.dime.x.right	25
+	%define	cg.nickel.x		32
+	%define	cg.nickel.x.right	41
+	%define	cg.penny.x		47
+	%define	cg.penny.x.right	55
+	%define	cg.one.x			62
+	%define	cg.one.x.right		74
+	%define	cg.five.x			77
+	%define	cg.five.x.right	89
+	%define	cg.ten.x			92
+	%define	cg.ten.x.right		104
+	
+	[Money view values:
+	%define	view.ego.is.money	40
+	%define	view.penny		41
+	%define	view.nickel		42
+	%define	view.dime			43
+	%define	view.quarter		44
+	%define	view.one			45
+	%define	view.five			46
+	%define	view.ten			47
+	%define	view.bill.pile		48
+	%define	view.bill.blank	49
+
+
+
+[************* VIEWS ************]
+%view	v.ego.is.arrow				0	[	EGO VIEWS:
+%view	v.ego			 		1
+%view	v.ego.train.job			2
+	%define	c.hand.left		0		[	loop 2v's cells
+	%define	c.hand.right		1
+	%define	c.hand.down		2
+
+%view	v.ego.toy.job				3
+%view	v.ego.toy.job.hand.out		4
+%view	v.ego.airport.hands.down		5
+%view	v.ego.airport.hands.up		6
+%view	v.ego.airport.throwing		7
+%view	v.ego.melon.job.hands.down	8
+%view	v.ego.melon.job.hands.up		9
+%view	v.ego.melon.job.squawking	10
+%view	v.ego.with.melon			11
+	%define	c.watermelon		0
+	%define	c.pumpkin			1
+	%define	c.cantelope		2
+
+%view	v.ego.melon.job.forward		12
+%view	v.ego.train.job.walking		13
+%view	v.ego.toy.job.climbing		14	
+%view	v.ego.toy.job.climbing.hand.out 15
+%view	v.ego.pg					16
+[%view	v.				17
+%view	v.ego.pg.jumping			18
+[%view	v.				19
+[%view	v.				20
+%view	v.ego.pg.ladder			21	[	Goofy's store
+%view	v.ego.pg.pulley			22	[	These views are with ego.
+%view	v.ego.pg.tire				23	[	These views+100 are w/o ego.
+%view	v.ego.pg.old.box			24	
+%view	v.ego.pg.slide				25
+%view	v.ego.pg.firemans.pole		26
+%view	v.ego.pg.rope				27	[	Mickey's store
+%view	v.ego.pg.trapeze			28
+%view	v.ego.pg.ships.wheel		29
+%view	v.ego.pg.trampoline			30
+[%view	v.				31
+%view	v.ego.pg.somersault.bar		32
+%view	v.ego.pg.swing				33	[	Minnie's store
+[%view	v.				34
+%view	v.ego.pg.rings				35
+%view	v.ego.pg.toy.horse			36
+%view	v.ego.pg.tetherball.pole		37
+%view	v.ego.pg.parallel.bars		38
+%view	v.ego.pg.slide.flipping		39
+%view	v.ego.is.money				40	[	1 cell of every $ value.
+%view	v.pennies					41	[	Each cell shows 1 more coin.
+%view	v.nickels					42	[		"
+%view	v.dimes					43	[		"
+%view	v.quarters				44	[		"
+%view	v.ones					45	[	Only 1 cell.
+%view	v.fives					46	[		"
+%view	v.tens					47	[		"
+%view	v.bill.pile				48	[	Each cell shows 1 more bill.
+%view	v.bill.blank				49	[	1 blank cell to erase with.
+[%view	v.				50
+%view	v.money.drawer				51
+[%view	v.				52
+[%view	v.				53
+[%view	v.				54
+[%view	v.				55
+[%view	v.				56
+[%view	v.				57
+[%view	v.				58
+[%view	v.				59
+[%view	v.				60
+%view	v.airport.sign				61	[	MAIN STREET:
+%view	v.toy.sign				62
+%view	v.produce.sign				63
+%view	v.train.depot.sign			64
+%view	v.fountain				65
+%view	v.5.and.10.sign			66
+%view	v.hardware.sign			67
+%view	v.level.sign				68	[	for Room 3
+[%view	v.				69
+[%view	v.				70
+%view	v.conveyor				71	[	PRODUCE HANDLER GAME:
+%view	v.watermelon				72
+%view	v.pumpkin					73
+%view	v.cantelope				74
+%view	v.melon.splat				75
+[%view	v.				76
+[%view	v.				77
+[%view	v.				78
+[%view	v.				79
+[%view	v.				80
+%view	v.airplane				81	[	AIRPORT GAME:
+	%define	c.level			0
+	%define	c.aimed.up		1
+
+%view	v.large.airplane			82
+%view	v.baggage					83	[	3 loops, 10 cels each.
+%view	v.invisible.baggage			84	[	Each cel is name of airport
+%view	v.trailer					85	[	Same as baggage, above.
+[%view	v.				86
+%view	v.tractor					87
+%view	v.small.truck				88
+%view	v.large.airplane.entering	89
+%view	v.large.airplane.leaving		90
+[%view	v.				91
+[%view	v.				92
+[%view	v.				93
+[%view	v.				94
+[%view	v.				95
+[%view	v.				96
+[%view	v.				97
+[%view	v.				98
+%view	v.store.rope				99	[	STORE VIEWS:
+%view	v.goofy.store				100	[	Working behind the register
+%view	v.mickey.store				101	[		"
+%view	v.minnie.store				102	[		"
+[%view	103
+[%view	104
+[%view	105
+%view	v.store.rope.and.pulley		106	[	Playground toys that don't
+%view	v.store.firemans.pole		107	[	fit in the store, or are
+%view	v.store.catwalk			108	[	overlay.pics.
+%view	v.store.slide				109
+%view	v.handcar					110	[	NEPHEW DEPARTMENT:	
+%view	v.rr.signal				111	[	Rm19:  crossing the tracks
+%view	v.handcar.waving			112
+%view	v.title.kid.1				113
+%view	v.title.kid.2				114
+%view	v.title.kid.3				115
+[%view	v.				116
+[%view	v.				117
+[%view	v.				118
+[%view	v.				119
+%view	v.pg.flag					120	
+%view	v.pg.ladder				121	[	Goofy's store
+%view	v.pg.pulley				122
+%view	v.pg.tire					123
+%view	v.pg.old.box				124	
+[%view	v.				125
+[%view	v.				126
+[%view	v.				127	[	Mickey's store
+%view	v.pg.trapeze				128
+%view	v.pg.ships.wheel			129
+%view	v.pg.trampoline			130
+[%view	v.				131
+%view	v.pg.somersault.bar			132
+%view	v.pg.swing				133	[	Minnie's store
+%view	v.pg.spaceship.ladder		134
+%view	v.pg.rings				135
+%view	v.pg.toy.horse				136
+%view	v.pg.tetherball.pole		137
+%view	v.pg.parallel.bars			138
+[%view	v.				139
+[%view	v.				140			[	TOY STORE GAME:
+%view	v.toys					141	[2 loops w/10 cels each
+[%view	v.				142
+[%view	v.				143
+[%view	v.				144
+[%view	v.				145
+%view	v.toy.splat				146
+%view	v.toy.store.ladder			147			
+%view	v.toy.store.bar			148			
+%view	v.toy.store.switch			149
+[%view	v.				150
+%view	v.switch					151	[	TRAIN GAME:
+%view	v.train					152	[	4 loops, L,R,F,B
+[%view	v.				153
+[%view	v.				154
+[%view	v.				155
+%view	v.train.west.to.south		156
+%view	v.train.south.to.west		157
+%view	v.train.south.to.east		158
+%view	v.train.east.to.south		159
+%view	v.train.east.to.north		160
+%view	v.train.north.to.west		161
+%view	v.train.north.to.east		162
+	%define	train			152
+	%define	train.west.to.south	156
+	%define	train.south.to.west	157
+	%define	train.south.to.east	158
+	%define	train.east.to.south	159
+	%define	train.east.to.north	160
+	%define	train.north.to.west	161
+	%define	train.north.to.east	162
+
+%view	v.tiny.town				163
+%view	v.town.names				164
+%view	v.turnout.west.to.south		165
+%view	v.turnout.south.to.west		166
+%view	v.turnout.south.to.east		167
+%view	v.turnout.east.to.south		168
+%view	v.turnout.east.to.north		169
+
+
+
+[************* ANIMATED OBJECTS ************]
+%object	ego					0	[	Bytes allocated:  1500
+	%define	obj.1			1	[	Each of these objects is named
+	%define	obj.2			2	[	for its size x 100 bytes.
+	%define	obj.3			3	[		"
+	%define	obj.4			4	[		"
+	%define	obj.5			5	[		"
+	%define	obj.6			6	[		"
+	%define	obj.7			7	[		"
+	%define	obj.8			8	[		"
+	%define	obj.9			9	[		"
+	%define	obj.10			10	[		"
+	%define	obj.14			11	[		"
+
+	%define	obj.400.1			12	[	400 bytes
+	%define	obj.400.2			13	[	400
+	%define	obj.350			14	[	350
+	%define	obj.500			15	[	500
+	%define	obj.640.1			16	[	640
+	%define	obj.640.2			17	[	640
+	%define	obj.640.3			18	[	640
+
+	%define	obj.100.1			19	[	100 bytes each
+	%define	obj.100.2			20	[	 "
+	%define	obj.100.3			21	[	 "
+	%define	obj.100.4			22	[	 "
+	%define	obj.100.5			23	[	 "
+	%define	obj.100.6			24	[	 "
+
+	%define	obj.128.1			25	[	128 bytes each
+	%define	obj.128.2			26	[	 "
+	%define	obj.128.3			27	[	 "
+	%define	obj.128.4			28	[	 "
+	%define	obj.128.5			29	[	 "
+	%define	obj.128.6			30	[	 "
+	%define	obj.128.7			31	[	 "
+	%define	obj.128.8			32	[	 "
+
+	%define	obj.80.1			33	[	80 bytes each
+	%define	obj.80.2			34	[	 "
+	%define	obj.80.3			35	[	 "
+	%define	obj.80.4			36	[	 "
+	%define	obj.80.5			37	[	 "
+	%define	obj.80.6			38	[	 "
+
+
+
+[************* INVENTORY OBJECTS ************]
+%object	i.anything				0
+%object	i.ladder					1	[	Goofy's store
+%object	i.pulley					2
+%object	i.tire					3
+%object	i.old.box					4	
+%object	i.slide					5		
+%object	i.firemans.pole			6
+%object	i.rope					7	[	Mickey's store
+%object	i.trapeze					8
+%object	i.ships.wheel				9
+%object	i.trampoline				10
+%object	i.catwalk					11
+%object	i.somersault.bar			12
+%object	i.swing					13	[	Minnie's store
+%object	i.spaceship.ladder			14
+%object	i.rings					15
+%object	i.toy.horse				16
+%object	i.tetherball.pole			17
+%object	i.parallel.bars			18
+
+
+
+[************ CONTROLLERS ************]
+%define	c.quit				1
+%define	c.help				2
+%define	c.save				3
+%define	c.useit				4
+%define	cGoToMainStreet		5
+%define	c.doit				6
+%define	c.restart				7
+%define	cDummy				8
+%define	cObjInfo				9
+%define	c.status				10
+%define	cAbout				11
+%define	c.toggle.monitor		12
+%define	c.show.mem			13
+%define	c.debug				14
+%define	c.init.joy			15
+%define	c.sound.toggle			16
+%define	c.cancel.line			17
+%define	c.echo.line			18
+%define	c.pause				19
+%define	c.show.priority		20
+%define	c.version				21
+%define	c.show.ego			22
+%define	c.test				23
+%define	cCrescendo			24
+%define	cDecrescendo			25
+%define	cMenu				26
+
+
+
+
+[************ ROOM LOGICS ************]
+%define	rm.title					1
+%define	rm.credits				2
+%define	rm.pick.a.level			3
+%define	rm.menu.west				6
+%define	rm.menu.east				7
+%define	rm.goofy.store				11
+%define	rm.mickey.store			12
+%define	rm.minnie.store			13
+%define	rm.change					14
+%define	rm.pg.north				15
+%define	rm.pg.west				16
+%define	rm.pg.central				17
+%define	rm.pg.east				18
+%define	rm.pg.south				19	[	crossing the tracks
+%define	rm.pg.west.top				20
+%define	rm.train.job				21
+%define	rm.melon.job				22
+%define	rm.toy.job				23
+%define	rm.airport.job				24
+%define	rm.payroll				25
+
+
+[************ OVERLAY PICTURES ************]
+%define	pic.slide					4
+%define	pic.monkey.rope			5
+%define	pic.catwalk				8
+%define	pic.pulley.rope.top			9
+%define	pic.pulley.rope.bottom		10
+%define	pic.fort.chain				26
+%define	pic.firemans.pole			27
+%define	pic.change.eraser			28
+%define	pic.logo					29
+%define	pic.ST.rm3				30
+
+
+
+
+[************ DYNAMIC LOGICS ************]
+%define	lgc.trace					26
+%define	error.logics				27
+%define	startup.logics				28
+%define	debug.logics				29
+%define	rm0.init.logics 			30
+%define	help.logics				31
+%define	job.logics				32
+%define	store.logics				33
+%define	payroll.logics				34
+%define	dons.money.logics			35
+%define	owes.money.logics			36
+%define	paid.money.logics			37
+%define	earned.money.logics			38
+%define	goofy.change.logics			41
+%define	mickey.change.logics		42
+%define	minnie.change.logics		43
+
+
+
+[************ SOUND EFFECTS ************]
+%define	s.ok						1
+%define	s.wrong					2
+%define	s.melon.splat				3
+%define	s.squawk					4
+%define	s.melon					5
+%define	s.train.whistle			6
+%define	s.train.starting			7
+%define	s.train.moving				8
+%define	s.train.stopping			9
+%define	s.toy.train.coming			10
+%define	s.toy.train.whistle			11
+%define	s.toy.train.leaving			12
+%define	s.toy.falling				13
+%define	s.toy.splat				14
+%define	s.airplane.landing			15
+%define	s.airplane.taking.off		16
+%define	s.move.money				17
+%define	s.airplane.parked			18
+%define	s.game.over				19
+%define	s.rr.signal				20
+
+[************ MUSIC ************]
+%define	m.menu					21
+%define	m.playground				22
+%define	m.job					23
+%define	m.store					24
+
+[************ MORE EFFECTS ************]
+%define	s.blip					25
+%define	s.ego.jumping				26

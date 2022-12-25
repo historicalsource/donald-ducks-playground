@@ -1,0 +1,541 @@
+[logics for room 22 -- rm.melon.job
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+%define	watermelon			  1
+%define	pumpkin				  2
+%define	cantelope				  3
+
+%define	pallet.1.left			  0
+%define	pallet.1.right			 25
+%define	pallet.2.left			 24
+%define	pallet.2.right			 55
+%define	pallet.3.left			 54
+%define	pallet.3.right			 83
+%define	correct.pay.beginning	  1
+%define	correct.pay.intermediate	  2
+%define	correct.pay.advanced	  3
+%define	incorrect.pay.beginning	  0
+%define	incorrect.pay.intermediate 0
+%define	incorrect.pay.advanced	  0
+%define	donalds.baseline		100
+%define	middle.of.pallet		119
+%define	center.x				 72	[	reposition problems right of here
+%define	conveyor.belt.y		161
+%define	splat.y				159
+%define	pissed.off.time		 30
+%define	fair.catch.beginning	 16
+%define	fair.catch.intermediate	 14
+%define	fair.catch.advanced		 12
+%define	hands.up.distance		 30
+
+
+%define	throw.a.melon			lf0
+%define	melon.arrived			lf1
+%define	move.melon.into.pallet	lf2
+%define	melon.in.pallet		lf3
+%define	melon.in.correct.pallet	lf4
+%define	melon.off.screen		lf5
+%define	melon.on.screen		lf6
+%define	make.a.splat			lf7
+%define	sound.done			lf8
+%define	conveyor.done			lf9
+%define	squawking				tf0	[	sneaky!
+
+%define	melon.in.air			lcl0
+%define	melon.location			lcl1
+%define	melon.trajectory		lcl2
+%define	melon.in.hand			lcl3
+%define	fair.catch.distance		lcl4
+%define	melon.step.size		lcl5
+%define	ego.step.size			lcl6
+
+
+									[  alloc actual view#
+%object	a.conveyor			obj.1	[	100	  84	 71v
+%object	a.melon				obj.5	[	500   444	 72v-75v
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+	set( no.script);
+	
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	load.logics( job.logics);
+	load.logics( earned.money.logics);
+
+	load.view( v.ego.melon.job.forward);
+	load.view( v.ego.melon.job.hands.down);
+	load.view( v.ego.melon.job.hands.up);
+	load.view( v.ego.melon.job.squawking);
+	load.view( v.ego.with.melon);
+
+	load.view( v.watermelon);
+	load.view( v.pumpkin);
+	load.view( v.cantelope);
+	load.view( v.melon.splat);
+	load.view( v.conveyor);
+
+	load.sound( s.squawk);
+	load.sound( s.game.over);
+	load.sound( s.blip);
+	load.sound( m.job);
+	load.sound( s.ok);
+	load.sound( s.melon);
+	load.sound( s.melon.splat);
+
+
+	[			view, loop, cel, x, y, priority
+	add.to.picture( v.watermelon, 0, 0, 9, 128, 15, 15);
+	add.to.picture( v.pumpkin, 0, 0, 41, 128, 15, 15);
+	add.to.picture( v.cantelope, 0, 0, 75, 125, 15, 15);
+
+	if (level == beginning)
+		{
+		correct.pay = correct.pay.beginning;
+		incorrect.pay = incorrect.pay.beginning;
+		fair.catch.distance = fair.catch.beginning;
+		speed = normal;
+		ego.step.size = 3;
+		melon.step.size = 5;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			correct.pay = correct.pay.intermediate;
+			incorrect.pay = incorrect.pay.intermediate;
+			fair.catch.distance = fair.catch.intermediate;
+			speed = halffast;
+			ego.step.size = 3;
+			melon.step.size = 4;
+			}
+		else
+			{
+			correct.pay = correct.pay.advanced;
+			incorrect.pay = incorrect.pay.advanced;
+			fair.catch.distance = fair.catch.advanced;
+			speed = halffast;
+			ego.step.size = 4;
+			melon.step.size = 5;
+			}
+		}
+
+	animate.obj( a.melon);
+	ignore.objs( a.melon);
+	set.priority( a.melon, 15);
+	step.size( a.melon, melon.step.size);
+
+	animate.obj( a.conveyor);
+	set.view( a.conveyor, v.conveyor);
+	step.size( a.conveyor, melon.step.size);
+	position( a.conveyor, 0, conveyor.belt.y); [	Start at 0 because it gets 
+	set.priority( a.conveyor, 13);	[	repositioned below since
+	draw( a.conveyor);				[	conveyor.done is set.
+	target.x = 82;					[	target.x/y never change
+	target.y = 0;
+	set( conveyor.done);
+
+	observe.blocks( ego);
+	set.view( ego, v.ego.melon.job.forward);
+	position( ego, 38, donalds.baseline);
+	draw( ego);
+	step.size( ego, ego.step.size);
+	work = 2;
+	cycle.time( ego, work);
+
+	set( throw.a.melon);
+
+	show.pic( );
+	call( job.logics);
+	return( );
+
+	}							[	end init.log
+
+
+
+if (current.status == waiting.to.leave)
+	{
+	erase( a.melon);
+	goto exit;
+	}
+else
+	{
+	if (current.status == starting)
+		{
+		stop.update( ego);
+		goto exit;
+		}
+	else
+		{
+		if (current.status == ready.to.start)
+			{
+			current.status = playing.game;
+			start.update( ego);
+			}
+		}
+	}
+
+
+if ((ego.x == old.ego.x || 
+	melon.in.hand))
+	{
+	set( no.cycling);
+	}
+else
+	{
+	reset( no.cycling);
+	}
+
+if (squawking)
+	{
+	reset( no.cycling);
+	}
+
+
+if  (ego.dir != ego.left &&
+	ego.dir != ego.right)
+	{
+	ego.dir = 0;
+	}
+
+if  (ego.x > center.x && 
+	ego.dir == ego.right)
+	{
+	ego.dir = 0;
+	}
+
+if (squawking)
+	{
+	ego.dir = 0;
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (doit && melon.in.hand)
+	{
+	reset( doit);
+	set( move.melon.into.pallet);		[	This flag is also set if he's 
+								[	not close enough to catch melon.
+	if  (ego.x > pallet.1.left && 	[	He's dropped it, it's goin' in; 
+		ego.x < pallet.1.right &&	[	but is it right?
+		melon.in.hand == watermelon)
+		{
+		set( melon.in.correct.pallet);
+		}
+	else
+		{
+		if  (ego.x > pallet.2.left && 
+			ego.x < pallet.2.right &&
+			melon.in.hand == pumpkin)
+			{
+			set( melon.in.correct.pallet);
+			}
+		else
+			{
+			if  (ego.x > pallet.3.left && 
+				ego.x < pallet.3.right &&
+				melon.in.hand == cantelope)
+				{
+				set( melon.in.correct.pallet);
+				}
+			}
+		}
+
+	x = ego.x;
+	if (melon.in.hand == watermelon)	[	compensate for sizes
+		{
+		x += 1;
+		}
+	else
+		{
+		if (melon.in.hand == pumpkin)
+			{
+			x += 3;
+			}
+		else
+			{
+			if (melon.in.hand == cantelope)
+				{
+				x += 5;
+				}
+			}
+		}
+	
+	position.f( a.melon, x, ego.y);		[	position & redraw melon.
+	draw( a.melon);
+	melon.in.hand = 0;
+	}
+
+		
+[*****
+:no.input
+[*****
+
+if   (throw.a.melon && 
+	!melon.on.screen && 
+	!squawking)
+	{
+	reset( throw.a.melon);
+	set( melon.on.screen);
+	if (ego.x > center.x)
+		{
+		ego.x -= 5;
+		reposition.to.f( ego, ego.x, ego.y);
+		}
+	set.view( ego, v.ego.melon.job.hands.down);
+
+	random( 1, 3, melon.in.air);		[	Pick a melon, any melon.
+	if (melon.in.air == watermelon)
+		{
+		set.view( a.melon, v.watermelon);
+		position( a.melon, 139, 71);
+		}
+	else
+		{
+		if (melon.in.air == pumpkin)
+			{
+			set.view( a.melon, v.pumpkin);
+			position( a.melon, 143, 72);
+			}
+		else
+			{
+			set.view( a.melon, v.cantelope);
+			position( a.melon, 149, 73);
+			}
+		}
+
+	random( 1, 4, melon.trajectory);		[	pick a path
+	ignore.blocks( a.melon);
+	draw( a.melon);
+	move.obj( a.melon, 138, 70, 0, melon.arrived);
+	sound( s.melon, sound.done);
+	melon.location = 0;
+	}
+
+
+if (melon.arrived)
+	{
+	reset( melon.arrived);
+	++melon.location;
+
+	if (melon.location == 1)
+		{
+		if (melon.trajectory == 1)		{x = 121; y = 58;}
+		if (melon.trajectory == 2)		{x = 124; y = 62;}
+		if (melon.trajectory == 3)		{x = 127; y = 64;}
+		if (melon.trajectory == 4)		{x = 130; y = 65;}
+		}
+
+	if (melon.location == 2)
+		{
+		if (melon.trajectory == 1)		{x = 104; y = 52;}
+		if (melon.trajectory == 2)		{x = 110; y = 58;}
+		if (melon.trajectory == 3)		{x = 116; y = 61;}
+		if (melon.trajectory == 4)		{x = 122; y = 63;}
+		}
+
+	if (melon.location == 3)
+		{
+		if (melon.trajectory == 1)		{x =  87; y = 51;}
+		if (melon.trajectory == 2)		{x =  96; y = 56;}
+		if (melon.trajectory == 3)		{x = 105; y = 61;}
+		if (melon.trajectory == 4)		{x = 114; y = 64;}
+		}
+
+	if (melon.location == 4)
+		{
+		if (melon.trajectory == 1)		{x =  70; y = 51;}
+		if (melon.trajectory == 2)		{x =  82; y = 57;}
+		if (melon.trajectory == 3)		{x =  94; y = 63;}
+		if (melon.trajectory == 4)		{x = 106; y = 66;}
+		}
+
+	if (melon.location == 5)
+		{
+		if (melon.trajectory == 1)		{x =  53; y = 56;}
+		if (melon.trajectory == 2)		{x =  68; y = 60;}
+		if (melon.trajectory == 3)		{x =  83; y = 67;}
+		if (melon.trajectory == 4)		{x =  98; y = 71;}
+		}
+
+	if (melon.location == 6)
+		{
+		set.view( ego, v.ego.melon.job.hands.up);
+
+		if (melon.trajectory == 1)		{x = 35; y = 66;}
+		if (melon.trajectory == 2)		{x = 54; y = 66;}
+		if (melon.trajectory == 3)		{x = 72; y = 74;}
+		if (melon.trajectory == 4)		{x = 90; y = 77;}
+		}
+
+	if (melon.location == 7)
+		{
+		if (melon.trajectory == 1)		{x = 18; y = 77;}
+		if (melon.trajectory == 2)		{x = 40; y = 78;}
+		if (melon.trajectory == 3)		{x = 61; y = 82;}
+		if (melon.trajectory == 4)		{x = 82; y = 85;}
+		}
+
+	if (melon.location == 8)
+		{
+		if (melon.trajectory == 1)		{x =  1; y = donalds.baseline;}
+		if (melon.trajectory == 2)		{x = 27; y = donalds.baseline;}
+		if (melon.trajectory == 3)		{x = 51; y = donalds.baseline;}
+		if (melon.trajectory == 4)		{x = 75; y = donalds.baseline;}
+		}
+
+	if (melon.location == 9)			[	Melon finally at Donald
+		{
+		melon.location = 0;
+
+		distance( ego, a.melon, work);
+		if (work < fair.catch.distance) [	By jove, I believe he's got it!
+			{
+			erase( a.melon);
+			melon.in.hand = melon.in.air;
+			set.view( ego, v.ego.with.melon);
+			--melon.in.air;		[	cel.0 = watermelon; cel.1 = pump;
+			set.cel.f( ego, melon.in.air);
+			stop.cycling( ego);
+			set( no.cycling);
+			reset( keep.cycling);
+			}
+		else						[	He missed!
+			{
+			set( move.melon.into.pallet);
+			}
+		melon.in.air = 0;
+		}
+	
+	if (melon.location)
+		{
+		step = 0;
+		move.obj.f( a.melon, x, y, step, melon.arrived);
+		}
+	}
+	
+
+if (move.melon.into.pallet)
+	{
+	reset( move.melon.into.pallet);
+ 	set.view( ego, v.ego.melon.job.forward);
+	start.cycling( ego);
+	set.priority( a.melon, 12);
+	get.posn( a.melon, x, y);
+	y = middle.of.pallet;
+	step = 0;
+	move.obj.f( a.melon, x, y, step, melon.in.pallet);
+	}
+
+
+if (make.a.splat)				  	[	put melon on belt
+	{
+	reset( make.a.splat);
+	sound( s.melon.splat, sound.done);
+	set.view( a.melon, v.melon.splat);
+	set.priority( a.melon, 13);
+	get.posn( a.melon, x, y);
+	y = splat.y;
+	position.f( a.melon, x, y);			[	and move melon off-screen
+	draw( a.melon);
+	move.obj( a.melon, 2, splat.y, 0, melon.off.screen);
+	}
+
+
+if (melon.in.pallet)				[	decide whether to squawk!
+	{
+	reset( melon.in.pallet);
+	erase( a.melon);				
+
+	if (melon.in.correct.pallet)
+		{
+		reset( melon.in.correct.pallet);
+		reset( melon.on.screen);
+		reset( no.cycling);
+		set( throw.a.melon);
+		money.to.fix = earned.money;
+		add.cents = correct.pay;
+		call( earned.money.logics);
+		}
+	else
+		{
+		money.to.fix = earned.money;
+		sub.cents = incorrect.pay;
+		call( earned.money.logics);
+		set( make.a.splat);
+		set.view( ego, v.ego.melon.job.squawking);	[	Donald's pissed
+		stop.motion( ego);
+		set( keep.cycling);
+		reset( no.cycling);
+		set( squawking);
+		set( sound.done);
+		}
+	}
+
+
+if (melon.off.screen)
+	{
+	reset( melon.off.screen);
+	reset( melon.on.screen);
+	set( throw.a.melon);
+	erase( a.melon);
+
+	reset( keep.cycling);
+	reset( no.cycling);
+	start.motion( ego);
+ 	reset( sound.done);
+	reset( squawking);
+
+	if (ego.x > center.x)
+		{
+		ego.x -= 5;
+		reposition.to.f( ego, ego.x, ego.y);
+		}
+	set.view( ego, v.ego.melon.job.hands.down);
+	}
+
+
+if (sound.done)
+	{
+	reset( sound.done);
+	if (squawking)
+		{
+		sound( s.squawk, sound.done);
+		}
+	}
+
+	 
+if (conveyor.done)
+	{
+	reset( conveyor.done);
+	reposition( a.conveyor, target.x, target.y); [	set in init.logs
+	move.obj( a.conveyor, 2, conveyor.belt.y, 0, conveyor.done);
+	}
+
+
+if (update.window == earned.money)
+	{
+	update.window = 0;
+	earned.money.x = 33;
+	earned.money.y = 24;
+	call( earned.money.logics);
+	}
+
+
+[*****
+:exit							[(the dynamic tests for leaving room)
+[*****
+
+call( job.logics);

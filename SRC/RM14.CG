@@ -1,0 +1,1603 @@
+[logics for room 14 -- rm.change
+
+%include "rm14.msg"
+%include "gamedefs"
+
+
+[	This room loads 3 money logics to add/subtract money, plus a logic to 
+[print the name and price of the toys bought in previous.room, plus the 
+[payroll logics to handle Don's money piles and the end.of.room sequence where
+[the money floats from above the line to Don's stash.
+
+[	There are only a few functions here:
+[
+[	pick up a coin/bill from:
+[			Don's pile [his bankroll, hence BR]
+[			change pile [CG]
+[			the open cash register drawer [RG]
+[	drop a coin while paying:  ie, before pressing total key to open register
+[			if below the line, move coin to bankroll
+[			if above the line, move coin to change 
+[	drop a coin while making change:  ie, after register.open
+[			if inside register, move coin to register
+[			else, move coin to change
+[
+[	The severe complication is when more than 9 coins are needed; then we
+[do a song and dance to click off a few extra coins, and convert them to the
+[next larger denomination, and fake a "move.coin.to.bankroll" to scoot them
+[next door.  This is not necessary in the change piles because he's 
+[arbitrarily limited to less than 9 of any coin.
+[
+[
+
+
+
+				[	LOCAL EQUATES:
+				[	Many more equates are in gamedefs, under constants.
+
+%define	rg.left				116	[	Register boundaries.
+%define	rg.center				130	[	8 pixels line to line + 12 blank 
+%define	rg.right				144	[		at bottom.
+%define	rg.y.top				 72
+%define	rg.y.1				 80
+%define	rg.y.2				 88
+%define	rg.y.3				 96
+%define	rg.y.4				104
+%define	rg.y.bottom			 98	[	y of add.to.pic( money.drawer)
+							
+%define	not.enough			  1	[	Financial comparison values.
+%define	just.right			  2
+%define	too.much				  3
+							
+
+					[	LOCAL VARIABLES:
+
+%define	pressed.total			lf0
+%define	rg.open				lf1
+%define	add.coin.to.cg			lf2
+%define	coin.back.in.rg		lf3
+%define	seen.message			lf4
+%define	seen.button.message		lf5
+
+%define	ok.to.take			lcl0
+%define	current.message		lcl1
+%define	above.or.below.line		lcl2
+%define	change.dollars			lcl3
+%define	change.cents			lcl4
+%define	tmp.owes.dollars		lcl5
+%define	tmp.owes.cents			lcl6
+%define	tmp.paid.dollars		lcl7
+%define	tmp.paid.cents			lcl8
+%define	tmp.dons.dollars		lcl9
+%define	tmp.dons.cents			lcl10
+%define	current.change.logics	lcl11
+%define	old.cents				lcl12
+%define	old.ten.cents			lcl13
+%define	old.dollars			lcl14
+%define	old.ten.dollars		lcl15
+%define	old.pennies			lcl16
+%define	old.nickels			lcl17
+%define	old.dimes				lcl18
+%define	old.quarters			lcl19
+%define	old.ones				lcl20
+%define	old.fives				lcl21
+%define	old.tens				lcl22
+%define	old.message			lcl23
+
+
+
+					[	INITIALIZE ROOM:
+
+if (init.log)
+	{
+	set.horizon( 1);
+	set( no.script);
+
+	reset( add.coin.to.bankroll);		[	Globals first.
+	coin.being.moved = 0;
+	reset( all.coins.moved);
+
+	paid.ten.dollars = 0;
+	paid.dollars = 0;
+	paid.ten.cents = 0;
+	paid.cents = 0;
+
+	local.quarter.count = 0;			[	prepare for Don moving money
+	local.dime.count = 0;
+	local.nickel.count = 0;
+	local.penny.count = 0;
+	local.one.count = 0;
+	local.five.count = 0;
+	local.ten.count = 0;
+
+	current.change.logics = previous.room;
+	current.change.logics += 30;		[	stores = 11-13; logics = 41-43
+	if ((current.change.logics < 41 ||
+		current.change.logics > 43))
+		{
+		current.change.logics = 43;	[	just in case of teleporting!
+		}
+	load.logics.f( current.change.logics);
+
+	load.logics( owes.money.logics);
+	load.logics( paid.money.logics);
+	load.logics( dons.money.logics);
+	load.logics( payroll.logics);
+	set( change.room.control);
+
+	load.view( v.ego.is.arrow);
+	load.view( v.money.drawer);
+	load.view( v.ego.is.money);
+	load.view( v.quarters);
+	load.view( v.dimes);
+	load.view( v.nickels);
+	load.view( v.pennies);
+	load.view( v.ones);
+	load.view( v.fives);
+	load.view( v.tens);
+	load.view( v.bill.pile);
+	load.view( v.bill.blank);
+
+	load.sound( s.move.money);
+	load.sound( s.wrong);
+	load.sound( s.ok);
+
+	work = pic.change.eraser;
+	load.pic( work);
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	loop = 0;						[	always the same
+	priority = 4;
+
+	view = view.quarter;			[	First, let's do his stash.
+	x = br.quarter.x;
+	y = br.y;
+	cell = quarter.count;
+	box = 4;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.dime;
+	x = br.dime.x;
+	y = br.y;
+	cell = dime.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.nickel;
+	x = br.nickel.x;
+	y = br.y;
+	cell = nickel.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.penny;
+	x = br.penny.x;
+	y = br.y;
+	cell = penny.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	cell = one.count;
+	view = view.bill.pile;
+	x = br.one.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.one;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = five.count;
+	view = view.bill.pile;
+	x = br.five.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.five;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = ten.count;
+	view = view.bill.pile;
+	x = br.ten.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.ten;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+
+	position( ego, 76, center.line);
+	set.view( ego, v.ego.is.arrow);
+	set( ego.is.arrow);				[	as opposed to a coin
+	set( no.cycling);
+	reset( keep.cycling);
+	ignore.objs( ego);
+	ignore.blocks( ego);
+	set.priority( ego, 14);
+	update.window = update.all;
+
+
+	[	See if he has enough to pay for that which he bought.
+
+	work.ten.dollars = dons.ten.dollars;
+	work.dollars = dons.dollars;
+	work.ten.cents = dons.ten.cents;
+	work.cents = dons.cents;
+
+	:dollars.total.3
+	if (work.ten.dollars)
+		{
+		--work.ten.dollars;
+		work.dollars += 10;
+		goto dollars.total.3;
+		}
+
+	:cents.total.3
+	if (work.ten.cents)
+		{
+		--work.ten.cents;
+		work.cents += 10;
+		goto cents.total.3;
+		}
+
+	tmp.dons.dollars = work.dollars;	[	How much he has.
+	tmp.dons.cents = work.cents;
+
+
+	work.ten.dollars = owes.ten.dollars;
+	work.dollars = owes.dollars;
+	work.ten.cents = owes.ten.cents;
+	work.cents = owes.cents;
+
+	:dollars.total.4
+	if (work.ten.dollars)
+		{
+		--work.ten.dollars;
+		work.dollars += 10;
+		goto dollars.total.4;
+		}
+
+	:cents.total.4
+	if (work.ten.cents)
+		{
+		--work.ten.cents;
+		work.cents += 10;
+		goto cents.total.4;
+		}
+
+	tmp.owes.dollars = work.dollars;	[	How much he owes.
+	tmp.owes.cents = work.cents;
+
+
+	if (tmp.dons.dollars < tmp.owes.dollars)
+		{
+		work = not.enough;
+		}
+	else
+		{
+		if (tmp.dons.dollars > tmp.owes.dollars)
+			{
+			work = too.much;
+			}
+		else						[	Dollar amounts equal. Check cents.
+			{
+			if (tmp.dons.cents < tmp.owes.cents)
+				{
+				work = not.enough;
+				}
+			else
+				{
+				if (tmp.dons.cents > tmp.owes.cents)
+					{
+					work = too.much;
+					}
+				else
+					{
+					work = just.right;
+					}
+				}
+			}
+		}
+
+
+	show.pic( );
+
+	if (work == not.enough)
+		{
+		owes.money.x = 0;
+		owes.money.y = 22;
+		message = 23;				[	"You owe
+		display.f( owes.money.y, owes.money.x, message);
+		owes.money.x = 8;
+		call( owes.money.logics);
+
+		dons.money.x = 22;
+		dons.money.y = 22;
+		message = 24;				[	"You have 
+		display.f( dons.money.y, dons.money.x, message);
+		dons.money.x = 32;
+		call( dons.money.logics);
+
+		sound( s.wrong, done);
+		current.status = waiting.to.leave;
+		update.window = 0;
+		print( 22);				[	"You don't have enough money.
+		display( 23, 0, 21);			[	"press button
+		set( changed.mind);
+		call.f( current.change.logics); [ call rooms 41-43 to clear purchases
+		}
+	else
+		{
+		draw( ego);
+		current.status = starting;
+		current.message = 17;		[	"Please pay now
+		}
+
+	old.cents = dons.cents;
+	old.ten.cents = dons.ten.cents;
+	old.dollars = dons.dollars;
+	old.ten.dollars = dons.ten.dollars;
+	old.pennies = penny.count;
+	old.nickels = nickel.count;
+	old.dimes = dime.count;
+	old.quarters = quarter.count;
+	old.ones = one.count;
+	old.fives = five.count;
+	old.tens = ten.count;
+
+	call( payroll.logics);
+
+	return( );
+	}							[	END room init.
+
+
+
+if ((current.status == all.done || 
+	current.status == waiting.to.leave))
+	{
+	if  (current.status == waiting.to.leave &&
+		!seen.button.message)
+		{
+		set( seen.button.message);
+		clear.lines( 21, 24, 0);
+		display( 23, 0, 21);
+		}
+	goto exit;
+	}
+		
+
+if (current.status == starting)		[	Fix up message.
+	{
+	current.message = 17;			[	"Please pay now
+	}
+else
+	{
+	if (current.status == paying)
+		{
+		current.message = 20;		[	"Press total when done.
+		}
+	else
+		{
+		if (current.status == making.change)
+			{
+			current.message = 19;	[	"Please make change.
+			}
+		}
+	}
+
+
+[*****
+:wear.da.fagahwee
+[*****
+
+if (ego.y > center.line && !rg.open)
+	{
+	ego.location = br;				[	. . . he's in his stash.
+	}
+else
+	{
+	if  (current.status == making.change &&
+		rg.open &&
+		posn( ego, rg.left, 0, screen.right, rg.y.4))
+		{
+		ego.location = rg;			[	. . . he's in the cash drawer.
+		}
+	else
+		{
+		if  (current.status == paying &&
+			ego.is.arrow &&
+			posn( ego, 109, 19, 159, 81))	[	. . . register boundaries.
+			{
+			ego.location = total.key;
+			}
+		else
+			{
+			ego.location = cg;		[	. . . he's in his cg.
+			}
+		}
+	}
+
+
+if  (ego.is.arrow && 
+	rg.open &&
+	current.status != payroll &&
+	posn( ego, rg.left, rg.y.top, rg.right, rg.y.4))
+	{
+	if (level == advanced)		{speed = halffast;}
+	else						{speed = normal;}
+	}
+else
+	{
+	if (level == advanced)		{speed = fast;}
+	else						{speed = halffast;}
+	}
+
+
+if (ego.is.arrow)
+	{
+	[	Do next section to determine precise area within rg, cg, or br.
+	}
+else
+	{
+	[	Since he's floating money, either cg, br, or rg is good enough.
+	goto do.it;
+	}
+
+
+[	If we're here, he must be an arrow!  Refine his precise location by
+[	choosing one of the following	three, and delve in a little deeper.
+
+if (ego.location == rg)				[	HE'S INSIDE THE REGISTER.
+	{
+	if (posn( ego, rg.center, rg.y.top, rg.right, rg.y.1))
+		{
+		ego.location = rg.quarter;
+		}
+	else
+		{
+		if (posn( ego, rg.center, rg.y.1, rg.right, rg.y.2))
+			{
+			ego.location = rg.dime;
+			}
+		else
+			{
+			if (posn( ego, rg.center, rg.y.2, rg.right, rg.y.3))
+				{
+				ego.location = rg.nickel;
+				}
+			else
+				{
+				if (posn( ego, rg.center, rg.y.3, rg.right, rg.y.4))
+					{
+					ego.location = rg.penny;
+					}
+				else
+					{
+					if (posn( ego, rg.left, rg.y.3, rg.center, rg.y.4))
+						{
+						ego.location = rg.one;
+						}
+					else
+						{
+						if (posn( ego, rg.left, rg.y.2, rg.center, rg.y.3))
+							{
+							ego.location = rg.five;
+							}
+						else
+							{
+						  if (posn( ego, rg.left, rg.y.1, rg.center, rg.y.2))
+								{
+								ego.location = rg.ten;
+								}
+							else
+								{
+								ego.location = rg;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+if (ego.location == cg)				[	HE'S IN THE CHANGE PILES.
+	{
+	if (posn( ego, cg.quarter.x, cg.y.top, cg.quarter.x.right, cg.y) 
+		&& local.quarter.count)
+		{
+		ego.location = cg.quarter;
+		}
+	else
+		{
+		if (posn( ego, cg.dime.x, cg.y.top, cg.dime.x.right, cg.y) 
+			&& local.dime.count)
+			{
+			ego.location = cg.dime;
+			}
+		else
+			{
+			if (posn( ego, cg.nickel.x, cg.y.top, cg.nickel.x.right, cg.y) 
+				&& local.nickel.count)
+				{
+				ego.location = cg.nickel;
+				}
+			else
+				{
+				if (posn( ego, cg.penny.x, cg.y.top, cg.penny.x.right, cg.y) 
+					&& local.penny.count)
+					{
+					ego.location = cg.penny;
+					}
+				else
+					{
+					if (posn( ego, cg.one.x, cg.y.top, cg.one.x.right, cg.y) 
+						&& local.one.count)
+						{
+						ego.location = cg.one;
+						}
+					else
+						{
+					if (posn( ego, cg.five.x, cg.y.top, cg.five.x.right, cg.y) 
+							&& local.five.count)
+							{
+							ego.location = cg.five;
+							}
+						else
+							{
+					  if (posn( ego, cg.ten.x, cg.y.top, cg.ten.x.right, cg.y) 
+								&& local.ten.count)
+								{
+								ego.location = cg.ten;
+								}
+							else
+								{
+								ego.location = 0;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+if (ego.location == br)				[	HE'S IN HIS STASH!
+	{
+	if (posn( ego, br.quarter.x, br.y.top, br.quarter.x.right, 167) 
+		&& quarter.count)
+		{
+		ego.location = br.quarter;
+		}
+	else
+		{
+		if (posn( ego, br.dime.x, br.y.top, br.dime.x.right, 167) 
+			&& dime.count)
+			{
+			ego.location = br.dime;
+			}
+		else
+			{
+			if (posn( ego, br.nickel.x, br.y.top, br.nickel.x.right, 167) 
+				&& nickel.count)
+				{
+				ego.location = br.nickel;
+				}
+			else
+				{
+				if (posn( ego, br.penny.x, br.y.top, br.penny.x.right, 167) 
+					&& penny.count)
+					{
+					ego.location = br.penny;
+					}
+				else
+					{
+					if (posn( ego, br.one.x, br.y.top, br.one.x.right, 167) 
+						&& one.count)
+						{
+						ego.location = br.one;
+						}
+					else
+						{
+					 if (posn( ego, br.five.x, br.y.top, br.five.x.right, 167)
+							&& five.count)
+							{
+							ego.location = br.five;
+							}
+						else
+							{
+					   if (posn( ego, br.ten.x, br.y.top, br.ten.x.right, 167) 
+								&& ten.count)
+								{
+								ego.location = br.ten;
+								}
+							else
+								{
+								ego.location = 0;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+
+[*****
+:do.it
+[*****
+
+if (!doit)
+	{
+	goto no.input;
+	}
+else
+	{
+	reset( doit);
+	}
+
+
+if  (ego.location == total.key)
+	{
+	if (!rg.open)					[	Only happens when ego.is.arrow!
+		{
+		move.obj( ego, 139, 66, 2, pressed.total);
+		}
+	else		
+		{
+		sound( s.wrong, done);
+		}
+	goto no.input;
+	}
+
+
+if (!ego.is.arrow)				[	Pressed button while carrying a coin.
+	{
+	if (ego.location == cg)
+		{	
+		[	Move coin to cg area in proper location for this coin.
+		get.posn( ego, old.ego.x, old.ego.y);
+		sound( s.ok, done);
+		step = 2;
+		move.obj.f( ego, target.x, target.y, step, add.coin.to.cg);
+		}
+	
+	if (ego.location == rg)
+		{
+		[	Put coin back into register.
+		get.posn( ego, old.ego.x, old.ego.y);
+		sound( s.ok, done);
+		move.obj( ego, rg.center, rg.y.2, 2, coin.back.in.rg);
+		}
+	
+	if (ego.location == br)
+		{
+		[	"add.coin.to.bankroll" signals the payroll.logics 
+		[	dynamic to put it back in his stash.
+		target.x = source.x; [	because dynamic expects "target" to be set
+		target.y = source.y;
+		get.posn( ego, old.ego.x, old.ego.y);
+		sound( s.ok, done);
+		step = 2;
+		move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+		}
+	goto no.input;
+	}
+else	 				[	Pressed button while an arrow.
+	{
+	if (!ego.location)
+		{
+		sound( s.wrong, done);		[	Wrong!
+		goto no.input;
+		}
+	}
+
+
+[	If we're here, ego.is.arrow and pressed doit while in a valid location.
+
+
+if (ego.location < br)				[	Is he in his stash?
+	{
+	coin.being.moved = ego.location;
+
+	loop = 0;
+	priority = 4;
+	source.y = br.y;
+	target.y = cg.y;
+
+	if (ego.location == br.quarter)
+		{
+		--quarter.count;
+		view = view.quarter;
+		cell = quarter.count;
+		sub.cents = 25;
+		source.x = br.quarter.x;
+		target.x = cg.quarter.x;
+		}
+
+	if (ego.location == br.dime)
+		{
+		--dime.count;
+		view = view.dime;
+		cell = dime.count;
+		sub.cents = 10;
+		source.x = br.dime.x;
+		target.x = cg.dime.x;
+		}
+
+	if (ego.location == br.nickel)
+		{
+		--nickel.count;
+		view = view.nickel;
+		cell = nickel.count;
+		sub.cents = 5;
+		source.x = br.nickel.x;
+		target.x = cg.nickel.x;
+		}
+
+	if (ego.location == br.penny)
+		{
+		--penny.count;
+		view = view.penny;
+		cell = penny.count;
+		sub.cents = 1;
+		source.x = br.penny.x;
+		target.x = cg.penny.x;
+		}
+
+	if (ego.location == br.one)
+		{
+		--one.count;
+		view = view.one;
+		cell = one.count;
+		sub.dollars = 1;
+		source.x = br.one.x;
+		target.x = cg.one.x;
+		}
+
+	if (ego.location == br.five)
+		{
+		--five.count;
+		view = view.five;
+		cell = five.count;
+		sub.dollars = 5;
+		source.x = br.five.x;
+		target.x = cg.five.x;
+		}
+
+	if (ego.location == br.ten)
+		{
+		--ten.count;
+		view = view.ten;
+		cell = ten.count;
+		sub.dollars = 10;
+		source.x = br.ten.x;
+		target.x = cg.ten.x;
+		}
+
+
+	if (view < view.one)			[	It's a coin.  Simple.
+		{
+		add.to.picture.f( view, loop, cell, source.x, source.y, priority, box);
+		}
+	else
+		{
+		view = view.bill.pile;
+		work = br.pile.y;
+		add.to.picture.f( view, loop, cell, source.x, work, priority, box);
+		if (!cell)
+			{
+			view = view.bill.blank;
+			add.to.picture.f( view, loop, cell, source.x, source.y, priority, box);
+			}
+		}
+
+	set.view( ego, v.ego.is.money);
+	set.cel.f( ego, coin.being.moved);
+	reset( ego.is.arrow);
+
+	sound( s.move.money, done);
+	money.to.fix = dons.money;
+	call.f( money.to.fix);
+
+	goto no.input;
+	}
+
+
+if  (ego.location > br && 			[	Is he in the change piles?
+	ego.location < cg)
+	{
+	loop = 0;
+	priority = 4;
+	source.y = br.y;
+	target.y = cg.y;
+
+
+	if (ego.location == cg.quarter)
+		{
+		--local.quarter.count;
+		sub.cents = 25;
+		view = view.quarter;
+		cell = local.quarter.count;
+		source.x = br.quarter.x;
+		target.x = cg.quarter.x;
+		}
+
+	if (ego.location == cg.dime)
+		{
+		--local.dime.count;
+		sub.cents = 10;
+		view = view.dime;
+		cell = local.dime.count;
+		source.x = br.dime.x;
+		target.x = cg.dime.x;
+		}
+
+	if (ego.location == cg.nickel)
+		{
+		--local.nickel.count;
+		sub.cents = 5;
+		view = view.nickel;
+		cell = local.nickel.count;
+		source.x = br.nickel.x;
+		target.x = cg.nickel.x;
+		}
+
+	if (ego.location == cg.penny)
+		{
+		--local.penny.count;
+		sub.cents = 1;
+		view = view.penny;
+		cell = local.penny.count;
+		source.x = br.penny.x;
+		target.x = cg.penny.x;
+		}
+
+	if (ego.location == cg.one)
+		{
+		--local.one.count;
+		sub.dollars = 1;
+		view = view.one;
+		cell = local.one.count;
+		source.x = br.one.x;
+		target.x = cg.one.x;
+		}
+
+	if (ego.location == cg.five)
+		{
+		--local.five.count;
+		sub.dollars = 5;
+		view = view.five;
+		cell = local.five.count;
+		source.x = br.five.x;
+		target.x = cg.five.x;
+		}
+
+	if (ego.location == cg.ten)
+		{
+		--local.ten.count;
+		sub.dollars = 10;
+		view = view.ten;
+		cell = local.ten.count;
+		source.x = br.ten.x;
+		target.x = cg.ten.x;
+		}
+
+	if (view < view.one)			[	It's a coin.  Simple.
+		{
+		add.to.picture.f( view, loop, cell, target.x, target.y, priority, box);
+		}
+	else
+		{
+		view = view.bill.pile;
+		work = cg.pile.y;
+		add.to.picture.f( view, loop, cell, target.x, work, priority, box);
+		if (!cell)
+			{
+			view = view.bill.blank;
+			add.to.picture.f( view, loop, cell, target.x, target.y, priority, box);
+			}
+		}
+
+	coin.being.moved = ego.location;
+	coin.being.moved -= 10;			[	sub for equates 11-17
+	set.view( ego, v.ego.is.money);
+	set.cel.f( ego, coin.being.moved);
+	reset( ego.is.arrow);
+	sound( s.move.money, done);
+
+	if (rg.open && current.status == making.change)
+		{
+		add.cents = sub.cents;
+		add.dollars = sub.dollars;
+		sub.cents = 0;
+		sub.dollars = 0;
+		money.to.fix = change.money;
+		[don't call.f( money.to.fix); -- it's right below us.
+		}
+	else							[	he's paying.
+		{
+		money.to.fix = paid.money;
+		call.f( money.to.fix);
+		}
+
+	goto no.input;
+	}
+
+
+if  (ego.location > cg &&			[	Is he in the register drawer?
+	ego.location < rg)
+	{
+	ok.to.take = 0;
+	reset( have.match);
+
+	if (change.cents)		[	Don't let him take more than he has coming!
+		{
+		if (change.cents > 24)
+			{
+			ok.to.take = quarter;
+			}
+		else
+			{
+			if (change.cents > 9)
+				{
+				ok.to.take = dime;
+				}
+			else
+				{
+				if (change.cents > 4)
+					{
+					ok.to.take = nickel;
+					}
+				else
+					{
+					ok.to.take = penny;
+					}
+				}
+			}
+		}
+	
+	if (change.dollars)
+		{
+		if (change.dollars > 9)
+			{
+			ok.to.take = ten;
+			}
+		else
+			{
+			if (change.dollars > 4)
+				{
+				ok.to.take = five;
+				}
+			else
+				{
+				ok.to.take = one;
+				}
+			}
+		}
+	
+	
+	if  (ego.location == rg.ten &&
+		ok.to.take == ten)
+		{
+		if (local.ten.count < 9)
+			{
+			target.x = cg.ten.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 37);
+			}
+		}
+
+	if  (ego.location == rg.five &&
+		ok.to.take > one)
+		{
+		if (local.five.count < 9)
+			{
+			target.x = cg.five.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 36);
+			}
+		}
+		
+	if  (ego.location == rg.one &&
+		ok.to.take > quarter)
+		{
+		if (local.one.count < 9)
+			{
+			target.x = cg.one.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 35);
+			}
+		}
+		
+	if  (ego.location == rg.quarter &&
+		ok.to.take > dime)
+		{
+		if (local.quarter.count < 9)
+			{
+			target.x = cg.quarter.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 34);
+			}
+		}
+		
+	if  (ego.location == rg.dime &&
+		ok.to.take > nickel)
+		{
+		if (local.dime.count < 9)
+			{
+			target.x = cg.dime.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 33);
+			}
+		}
+		
+	if  (ego.location == rg.nickel &&
+		ok.to.take > penny)
+		{
+		if (local.nickel.count < 9)
+			{
+			target.x = cg.nickel.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 32);
+			}
+		}
+		
+	if  (ego.location == rg.penny &&
+		ok.to.take)
+		{
+		if (local.penny.count < 9)
+			{
+			target.x = cg.penny.x;
+			target.y = cg.y;
+			set( have.match);
+			}
+		else
+			{
+			print( 31);
+			}
+		}
+		
+	if (!have.match)
+		{
+		sound( s.wrong, done);
+		set( ego.is.arrow);
+		}
+	else
+		{
+		sound( s.move.money, done);
+		coin.being.moved = ego.location;
+		coin.being.moved -= 20;		[	fix for equates 21-27
+		set.view( ego, v.ego.is.money);
+		set.cel.f( ego, coin.being.moved);
+		reset( ego.is.arrow);
+		}
+
+	goto no.input;
+
+	}
+
+
+sound( s.wrong, done);				[	shouldn't be here!
+
+
+[*****
+:no.input
+[*****
+
+if (pressed.total)
+	{
+	reset( pressed.total);
+
+	work.ten.dollars = paid.ten.dollars;
+	work.dollars = paid.dollars;
+	work.ten.cents = paid.ten.cents;
+	work.cents = paid.cents;
+
+	:dollars.total
+	if (work.ten.dollars)
+		{
+		--work.ten.dollars;
+		work.dollars += 10;
+		goto dollars.total;
+		}
+
+	:cents.total
+	if (work.ten.cents)
+		{
+		--work.ten.cents;
+		work.cents += 10;
+		goto cents.total;
+		}
+
+	tmp.paid.dollars = work.dollars;
+	tmp.paid.cents = work.cents;
+
+
+	work.ten.dollars = owes.ten.dollars;
+	work.dollars = owes.dollars;
+	work.ten.cents = owes.ten.cents;
+	work.cents = owes.cents;
+
+	:dollars.total.2
+	if (work.ten.dollars)
+		{
+		--work.ten.dollars;
+		work.dollars += 10;
+		goto dollars.total.2;
+		}
+
+	:cents.total.2
+	if (work.ten.cents)
+		{
+		--work.ten.cents;
+		work.cents += 10;
+		goto cents.total.2;
+		}
+
+	tmp.owes.dollars = work.dollars;
+	tmp.owes.cents = work.cents;
+
+
+	if (tmp.paid.dollars < tmp.owes.dollars)
+		{
+		work = not.enough;
+		}
+	else
+		{
+		if (tmp.paid.dollars > tmp.owes.dollars)
+			{
+			work = too.much;
+			}
+		else						[	Dollar amounts equal. Check cents.
+			{
+			if (tmp.paid.cents < tmp.owes.cents)
+				{
+				work = not.enough;
+				}
+			else
+				{
+				if (tmp.paid.cents > tmp.owes.cents)
+					{
+					work = too.much;
+					}
+				else
+					{
+					work = just.right;
+					}
+				}
+			}
+		}
+
+	if (work == not.enough)
+		{
+		sound( s.wrong, done);
+		print( 25);				[	"No Sale"
+		}
+	else
+		{
+		if (work == too.much)
+			{
+			sound( s.ok, done);
+			set( rg.open);			[	Open your drawers, Minnie!!
+			erase( ego);
+			current.status = making.change;
+			current.message = 19;
+			update.window = update.all;
+
+			change.cents = tmp.paid.cents;
+			change.dollars = tmp.paid.dollars;
+			sub.cents = tmp.owes.cents;
+			sub.dollars = tmp.owes.dollars;
+			money.to.fix = change.money;
+
+			add.to.picture( v.money.drawer, 0, 0, rg.left, rg.y.bottom, 4, 4);
+			work = pic.change.eraser;
+			overlay.pic( work);
+			show.pic( );
+
+			local.quarter.count = 0;
+			local.dime.count = 0;
+			local.nickel.count = 0;
+			local.penny.count = 0;
+			local.one.count = 0;
+			local.five.count = 0;
+			local.ten.count = 0;
+
+			draw( ego);
+			}
+		else						[	Just.right!
+			{
+			erase( ego);
+			sound( s.ok, done);
+			current.status = waiting.to.leave;
+			clear.lines( 21, 24, 0);
+			print( 16);			[	"Your purchases will be ...
+			display( 23, 0, 21);		[	"Press button to leave.
+			}
+		}
+	}
+
+
+
+[	Change ego from coin to arrow.  Inc corresponding change pile.
+
+if (add.coin.to.cg)			[	The floating ego.coin is on the change side
+	{					[	of the table.  Update the change piles.
+	reset( add.coin.to.cg);
+
+	if (coin.being.moved == ten)
+		{
+		add.dollars = 10;
+		++local.ten.count;
+		cell = local.ten.count;
+		if (cell == 1)
+			{
+			view = view.ten;
+			cell = 0;
+			}
+		else
+			{
+			view = view.bill.pile;
+			target.y = cg.pile.y;
+			}
+		}
+
+	if (coin.being.moved == five)
+		{
+		add.dollars = 5;
+		++local.five.count;
+		cell = local.five.count;
+		if (cell == 1)
+			{
+			view = view.five;
+			cell = 0;
+			}
+		else
+			{
+			view = view.bill.pile;
+			target.y = cg.pile.y;
+			}
+		}
+
+
+	if (coin.being.moved == one)
+		{
+		add.dollars = 1;
+		++local.one.count;
+		cell = local.one.count;
+		if (cell == 1)
+			{
+			view = view.one;
+			cell = 0;
+			}
+		else
+			{
+			view = view.bill.pile;
+			target.y = cg.pile.y;
+			}
+		}
+
+
+	if (coin.being.moved == quarter)
+		{
+		add.cents = 25;
+		++local.quarter.count;
+		view = view.quarter;
+		cell = local.quarter.count;
+		}
+
+	if (coin.being.moved == dime)
+		{
+		add.cents = 10;
+		++local.dime.count;
+		view = view.dime;
+		cell = local.dime.count;
+		}
+
+	if (coin.being.moved == nickel)
+		{
+		add.cents = 5;
+		++local.nickel.count;
+		view = view.nickel;
+		cell = local.nickel.count;
+		}
+
+	if (coin.being.moved == penny)
+		{
+		add.cents = 1;
+		++local.penny.count;
+		view = view.penny;
+		cell = local.penny.count;
+		}
+
+	erase( ego);
+
+	coin.being.moved = 0;
+	loop = 0;
+	priority = 4;
+	add.to.picture.f( view, loop, cell, target.x, target.y, priority, box);
+	target.x = 0;
+	target.y = 0;
+
+	set.view( ego, v.ego.is.arrow);
+	set( ego.is.arrow);
+	position.f( ego, old.ego.x, old.ego.y);
+	draw( ego);
+	update.window = update.all;
+	sound( s.move.money, done);
+
+	if (!rg.open)
+		{
+		money.to.fix = paid.money;
+		call.f( money.to.fix);
+		}
+	else
+		{
+		sub.cents = add.cents;
+		sub.dollars = add.dollars;
+		add.cents = 0;
+		add.dollars = 0;
+		money.to.fix = change.money;
+		[don't call.f( money.to.fix); -- it's below "do.text.window"
+		}
+
+	if (!seen.message)
+		{
+		set( seen.message);
+		current.message = 20;		[	"Press total when done.
+		current.status = paying;
+		update.window = update.all;
+		}
+
+	}							[	END add.coin.to.cg
+
+
+if (coin.back.in.rg)
+	{
+	sound( s.move.money, done);
+	reset( coin.back.in.rg);
+	erase( ego);
+	set.view( ego, v.ego.is.arrow);
+	set( ego.is.arrow);
+	position.f( ego, old.ego.x, old.ego.y);
+	draw( ego);
+	}
+
+
+[*****
+:do.text.window
+[*****
+
+if (update.window == paid.money)
+	{
+	update.window = 0;			[	We never print this.
+	}
+
+if (update.window == dons.money)
+	{
+	update.window = 0;
+	dons.money.x = 32;
+	dons.money.y = 22;
+	call( dons.money.logics);
+	}
+
+if (update.window == owes.money)
+	{
+	update.window = 0;
+	owes.money.x = 8;
+	owes.money.y = 22;
+	call( owes.money.logics);
+	}
+
+if (update.window == update.all)
+	{
+
+	if (current.message)
+		{
+		if (current.message != old.message)
+			{
+			if (current.message == 20)
+				{
+				print( 39);		[	Wordier helps stupidity!
+				}
+			else
+				{
+				print.f( current.message);
+				}
+			old.message = current.message;
+			}
+
+		x = 0;					[	Print current message.
+		y = 21;
+		set.text.attribute( 15, 0);
+		clear.lines( 21, 24, 0);
+		display.f( y, x, current.message);
+		}
+
+	if (current.status != payroll)
+		{
+		owes.money.x = 0;
+		owes.money.y = 22;
+		message = 23;				[	"You owe
+		display.f( owes.money.y, owes.money.x, message);
+		owes.money.x = 8;
+		call( owes.money.logics);
+		}
+		
+	if (current.status == making.change)
+		{
+		paid.money.x = 22;
+		paid.money.y = 22;
+		message = 18;				[	"You paid
+		display.f( paid.money.y, paid.money.x, message);
+		paid.money.x = 32;
+		call( paid.money.logics);
+		}
+	else
+		{
+		dons.money.x = 22;
+		dons.money.y = 22;
+		message = 24;				[	"You have 
+		display.f( dons.money.y, dons.money.x, message);
+		dons.money.x = 32;
+		call( dons.money.logics);
+		}
+	
+	if (current.status != payroll)
+		{
+		call.f( current.change.logics);
+		}
+	update.window = 0;
+	}
+
+
+[*****
+:money.changers
+[*****
+
+if (money.to.fix == change.money)		[	mere remnant of a former dynamic
+	{
+
+	if ((add.dollars || add.cents))
+		{
+		change.cents += add.cents;
+		change.dollars += add.dollars;
+		}
+	else
+		{
+		if ((sub.dollars || sub.cents))
+			{
+			:do.sub.cents
+			if (change.cents < sub.cents)
+				{
+				--change.dollars;
+				change.cents += 100;
+				}
+			change.cents -= sub.cents;
+			change.dollars -= sub.dollars;
+			}
+		}
+	
+	money.to.fix = 0;
+	add.dollars = 0;
+	add.cents = 0;
+	sub.dollars = 0;
+	sub.cents = 0;
+
+	if  (!change.cents &&			[	We're all done here!!
+		!change.dollars &&
+		rg.open)
+		{
+		current.status = payroll;
+		set( move.coin);			[	Tell dynamic to move cg home
+
+		set( ego.is.arrow);			[	. . .even though he isn't!  This
+			[	prevents bills slowing when they pass over the register.
+
+		reset( change.room.control);
+		sound( s.ok, done);
+		current.message = 16;		[	"Your purchases will be ...
+		update.window = update.all;
+		erase( ego);				[	Because dynamic is gonna draw.
+		}
+	else
+		{
+		if (change.cents > 99)
+			{
+			change.cents -= 100;
+			++change.dollars;
+			}
+		}
+	}
+
+
+[*****
+:exit							[dynamic tests for leaving the room
+[*****
+
+if (changed.mind)
+	{
+	[don't reset( changed.mind); change.logics is looking for it!
+
+	dons.cents = old.cents;			[	Make everything like it was when
+	dons.ten.cents = old.ten.cents;	[	he came in.
+	dons.dollars = old.dollars;
+	dons.ten.dollars = old.ten.dollars;
+
+	penny.count = old.pennies;
+	nickel.count = old.nickels;
+	dime.count = old.dimes;
+	quarter.count = old.quarters;
+	one.count = old.ones;
+	five.count = old.fives;
+	ten.count = old.tens;
+	
+	sound( s.ok, done);
+	current.status = waiting.to.leave;
+	update.window = 0;
+	clear.lines( 21, 24, 0);
+	display( 23, 0, 21);				[	"press button
+
+[	call rooms 41-43 with "changed.mind" set will clear purchases
+	call.f( current.change.logics);
+	if ((have.key( ) || doit))
+		{
+		reset( no.script);
+		new.room( rm.menu.west);
+		}
+	}
+
+call( payroll.logics);
+
+
+
+[--timer.1;
+[if (timer.1 == 0)
+[	{
+[	timer.1 = 99;
+[	clear.lines( 0, 1, 0);
+[	%message 66 "Change %v198 %v199 %v200 %v201 %v202 %v203 %v204"
+[	%message 67 "Cg %v43 %v44  TO %v45 %v46  TP %v47 %v48"
+[	display( 0, 0, 66);
+[	display( 1, 0, 67);
+[	}

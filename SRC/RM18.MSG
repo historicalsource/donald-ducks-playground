@@ -1,0 +1,20 @@
+[messages for room 18 -- rm.pg.east -- treehouse
+
+
+
+%message	16	
+"Put your toy down before you leave."
+
+%message	17	
+"You can't climb a tree while carrying a toy horse!"
+
+%message	18	
+"Press any key, the joystick button or"
+
+%message	19	
+"right mouse button and you can play\n
+      DONALD DUCK'S PLAYGROUND!"
+
+%message	20	
+"There's not enough room here to play on the toy horse."
+

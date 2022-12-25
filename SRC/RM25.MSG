@@ -1,0 +1,9 @@
+[messages for room 25 -- payroll window
+
+%message	16	"You have"
+%message	17	"You need to spend some of your money.
+  We're out of money here!"
+%message	18	"Press button to leave."
+%message	19	"You earned nothing!"
+%message	20	"You earned "
+

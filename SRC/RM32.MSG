@@ -1,0 +1,13 @@
+[messages for room 32 -- job.logics
+
+%message	16	"Time left 0:00"
+%message	17	"How long do you want to work?"
+%message	18	"A 2-minute shift."
+%message	19	"Money earned $ 0.00"
+%message	20	"Time's up!"
+%message	21	"Press button to leave."
+%message	22	"Use the joystick or arrow keys to change the minutes
+ below. Press the button to start work."
+[			 |    |    |    |    |    |    |    |   |
+[			 0    5    10   15   20   25   30   35 39
+

@@ -1,0 +1,9 @@
+[messages for room 43 -- minnie.change.logics
+
+%message	33	"Swing       "		[	Minnie's store
+%message	34	"Ladder      "
+%message	35	"Rings       "
+%message	36	"Toy Horse   "
+%message	37	"Tetherball  "
+%message	38	"Parallel Bar"
+

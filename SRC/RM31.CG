@@ -1,0 +1,65 @@
+[logics for room 31 -- the help room
+
+%include	"rm31.msg"
+%include "gamedefs"
+
+
+
+stop.sound();
+
+if (!mouse.machine)
+	{
+	print( 21);
+	print( 23);
+	print( 24);
+	}
+else
+	{
+	print( 31);
+	print( 33);
+	print( 34);
+	}
+
+
+
+
+[	text.screen( );
+[	set.text.attribute( 15, 0);
+[	clear.lines( 0, 24, 15);
+[	
+[	display(  1,  8, 21);
+[	display(  2, 18, 22);
+[	
+[	display(  4,  0, 23);
+[	display(  5, 15, 24);
+[	display(  6,  0, 25);
+[	display(  7, 15, 26);
+[	display(  8,  0, 27);
+[	display(  9, 15, 28);
+[	display( 10,  0, 29);
+[	
+[	display( 12,  0, 30);
+[	display( 13,  0, 31);
+[	display( 14,  0, 32);
+[	display( 15,  0, 33);
+[	display( 16,  0, 34);
+[	display( 17,  0, 35);
+[	display( 18, 15, 36);
+[	display( 19,  0, 37);
+[	
+[	display( 21,  0, 38);
+[	display( 22,  0, 39);
+[	display( 23, 19, 40);
+[	display( 24,  0, 41);
+[	
+[	
+[	:check.kb
+[	if (!have.key( ))
+[		{
+[		goto	check.kb;
+[		}
+[	
+[	graphics( );
+[	set.text.attribute( 15, 0);
+[	clear.lines( 21, 24, 0);
+

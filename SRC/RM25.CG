@@ -1,0 +1,330 @@
+[logics for room 25 -- payroll window
+
+%include "gamedefs"
+%include "rm25.msg"
+
+
+[	Entire room under program control.  If he earned any money in the 
+[previous.room, set "move.coin" and let the payroll dynamic move it to 
+[Don's stash, one coin at a time.
+
+
+%define	update.window.delay		lcl0
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+	set( no.script);
+
+	program.control( );
+
+	reset( add.coin.to.bankroll);		[	Globals first.
+	coin.being.moved = 0;
+	reset( all.coins.moved);
+	reset( change.room.control);
+	earned.money.x = 0;
+	earned.money.y = 0;
+	dons.money.x = 0;
+	dons.money.y = 0;
+
+	current.status = playing.game;	[	Dynamic will make actual decision
+
+
+	if (force.a.test)
+		{
+		earned.dollars = 9;
+		earned.cents = 9;
+		earned.ten.dollars = 0;
+		earned.ten.cents = 2;
+		}
+
+
+	[	Compute quantities of each denomination to pay him.
+
+	local.ten.count = earned.ten.dollars;
+	local.one.count = earned.dollars;
+	local.dime.count = earned.ten.cents;
+	local.penny.count = earned.cents;
+	local.five.count = 0;
+	local.quarter.count = 0;
+	local.nickel.count = 0;
+
+	:do.tens
+	if (local.one.count > 9)
+		{
+		++local.ten.count;
+		local.one.count -= 10;
+		goto do.tens;
+		}
+
+	if (local.one.count > 4)
+		{
+		++local.five.count;
+		local.one.count -= 5;
+		}
+
+	:do.quarters
+	if (local.dime.count > 2)
+		{
+		++local.quarter.count;
+		++local.nickel.count;
+		local.dime.count -= 3;
+		goto do.quarters;
+		}
+
+	:do.nickels
+	if (local.penny.count > 4)
+		{
+		++local.nickel.count;
+		local.penny.count -= 5;
+		goto do.nickels;
+		}
+
+	if (local.ten.count > 9)			{local.ten.count = 9;}
+	if (local.five.count > 9)		{local.five.count = 9;}
+	if (local.one.count > 9)			{local.one.count = 9;}
+	if (local.quarter.count > 9)		{local.quarter.count = 9;}
+	if (local.dime.count > 9)		{local.dime.count = 9;}
+	if (local.nickel.count > 9)		{local.nickel.count = 9;}
+	if (local.penny.count > 9)		{local.penny.count = 9;}
+
+
+	[Each stack contains 10 cels, showing 0 through 9 coins/bills.
+	[Order: 25, 10, 5, 1, $1, $5, $10 		[no $20's per Disnoids, 12/23/85
+
+	load.logics( payroll.logics);
+	load.logics( earned.money.logics);
+	load.logics( dons.money.logics);
+
+	load.view( v.ego.is.money);
+	load.view( v.pennies);
+	load.view( v.nickels);
+	load.view( v.dimes);
+	load.view( v.quarters);
+	load.view( v.ones);
+	load.view( v.fives);
+	load.view( v.tens);
+	load.view( v.bill.pile);
+	load.view( v.bill.blank);
+
+	load.sound( s.blip);
+	load.sound( s.move.money);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	loop = 0;						[	always the same
+	priority = 4;
+
+	view = view.quarter;			[	First, let's do his stash.
+	x = br.quarter.x;
+	y = br.y;
+	cell = quarter.count;
+	box = 4;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.dime;
+	x = br.dime.x;
+	y = br.y;
+	cell = dime.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.nickel;
+	x = br.nickel.x;
+	y = br.y;
+	cell = nickel.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.penny;
+	x = br.penny.x;
+	y = br.y;
+	cell = penny.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	cell = one.count;
+	view = view.bill.pile;
+	x = br.one.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.one;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = five.count;
+	view = view.bill.pile;
+	x = br.five.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.five;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = ten.count;
+	view = view.bill.pile;
+	x = br.ten.x;
+	y = br.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.ten;
+		y = br.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+
+
+	view = view.quarter;			[	Now, do the pay-off.
+	x = cg.quarter.x;
+	y = cg.y;
+	cell = local.quarter.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.dime;
+	x = cg.dime.x;
+	y = cg.y;
+	cell = local.dime.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.nickel;
+	x = cg.nickel.x;
+	y = cg.y;
+	cell = local.nickel.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	view = view.penny;
+	x = cg.penny.x;
+	y = cg.y;
+	cell = local.penny.count;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	cell = local.one.count;
+	view = view.bill.pile;
+	x = cg.one.x;
+	y = cg.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.one;
+		y = cg.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = local.five.count;
+	view = view.bill.pile;
+	x = cg.five.x;
+	y = cg.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.five;
+		y = cg.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	cell = local.ten.count;
+	view = view.bill.pile;
+	x = cg.ten.x;
+	y = cg.pile.y;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	if (cell)
+		{
+		cell = 0;
+		view = view.ten;
+		y = cg.y;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+
+	ignore.objs( ego);				[	ego is the floating money here
+	stop.cycling( ego);
+	set( no.cycling);
+	set.priority( ego, 15);
+	position( ego, 80, 40);
+
+	show.pic( );
+
+	if  (!earned.ten.dollars && 		[	Don made nothing last game!
+		!earned.dollars && 
+		!earned.ten.cents && 
+		!earned.cents)
+		{
+		print( 19);				[	"You earned nothing
+		display( 24, 0, 18);			[	"press button to leave
+		current.status = waiting.to.leave;
+		}
+	else
+		{
+		set( move.coin);			[	to get things moving in dynamic.
+		update.window = update.all;	[	to trigger "You earned" below.
+		display( 23, 0, 20);			[	"You earned
+		display( 23, 23, 16);			[	"You have 
+		}
+
+	call( payroll.logics);
+	return( );
+
+	}							[	end room init
+
+
+if (current.status == waiting.to.leave)
+	{
+	if (force.a.test)
+		{
+		reset( no.script);
+		new.room.f( current.room);
+		}
+	goto exit;
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (update.window == update.all)
+	{
+	update.window = 0;	 		[	first do don's numbers
+	dons.money.x = 32;
+	dons.money.y = 23;
+	call( dons.money.logics);
+	update.window = earned.money;		[	then do earned
+	}
+
+if (update.window == earned.money)
+	{
+	update.window = 0;
+	earned.money.x = 11;
+	earned.money.y = 23;
+	call( earned.money.logics);
+	}
+
+if (update.window == dons.money)
+	{
+	update.window = 0;
+	dons.money.x = 32;
+	dons.money.y = 23;
+	call( dons.money.logics);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+call( payroll.logics);
+call( earned.money.logics);
+call( dons.money.logics);

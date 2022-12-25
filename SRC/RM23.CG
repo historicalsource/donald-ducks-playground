@@ -1,0 +1,1159 @@
+[logics for room 23 -- rm.toy.job
+
+%include "rm23.msg"
+%include "gamedefs"
+
+
+[	Toys are stored in v.toys in this order:
+[		Loop A:
+[				4 cars (white, red, blue, green)
+[				4 trains (ditto)
+[				2 bears (white, red)
+[		Loop B:
+[				2 bears (blue, green)
+[				4 dolls 
+[				4 bishops.
+
+[	Toys are referred to by number, beginning with 1 (ending with 20).
+[Cells are 1 less, numbered from 0-19 (with 0-9 in loop 0; 10-19 as 0-9 of
+[loop 1).  Thus, toy.in.hand == 13 means he's carrying a white doll.
+
+[	Ego.locations on ground are 10-80, step 10.  Ego.location is 0 if moving.
+[Shelves are numbered 1-5 from bottom up.  If ego on ladder, ego.location = 
+[column.number + shelf number from bottom.  Thus, ego location 44  = on 
+[ladder at 3rd column, 4th shelf from floor.
+
+[	Time between trains is 1:19, 1:04, 0:49 (beginning, intermediate, 
+[advanced levels respectively).  Number of toys that fall during a train also
+[varies with level:  4, 5, or 6.  Disnoids thought it was how many kid had
+[put on shelf since last train, but the Comm64 is my way, not theirs.
+
+[	When train clock hits 0, we set train.here, train.status & train.timer.
+[Train.status 1 starts the train.coming sound, and prevents other sounds.  
+[When train.timer expires, we ++train.status to train.here, which starts the
+[toys falling (if the bars are open) and does the train.here sound.  When 
+[train.timer expires this time (or the last toy is down), we ++train.status
+[to train.leaving, reset the train.timer, do the train leaving sound, restart 
+[the train clock again, and retract the bars if they're extended.  
+
+
+
+					[	LOCAL EQUATES:
+
+%define	train.not.here			  0	[	Train.status values.
+[	%define	train.coming		 26	[	From gamedefs, current.status
+[	%define	train.here		 27
+[	%define	train.leaving		 28
+
+%define	train.coming.time		 27
+%define	train.here.time		 60
+%define	train.leaving.time		 20
+
+%define	correct.pay.beginning	   5	[	Financial matters.
+%define	correct.pay.intermediate	  10
+%define	correct.pay.advanced	  15
+%define	incorrect.pay.beginning	   5
+%define	incorrect.pay.intermediate 10
+%define	incorrect.pay.advanced	  15
+
+%define	toy.starting.x			  7	[	Toy locations
+%define	toy.starting.y			159
+%define	ego.toy.offset.x.right	  7
+%define	ego.toy.offset.x.left	  9
+%define	ego.toy.offset.y		  9
+
+%define	toy.x.20				 27
+%define	toy.x.30				 46
+%define	toy.x.40				 65
+%define	toy.x.50				 83
+%define	toy.x.60				102
+%define	toy.x.70				121
+%define	toy.x.80				131
+%define	toy.y.5				 41
+%define	toy.y.4				 65
+%define	toy.y.3				 89
+%define	toy.y.2				113
+%define	toy.y.1				137
+%define	splat.y				165
+
+%define	ego.x.20				 18	[	Ego locations
+%define	ego.x.30				 29
+%define	ego.x.40				 48
+%define	ego.x.50				 67
+%define	ego.x.60				 86
+%define	ego.x.70				105
+%define	ego.x.80				134
+%define	ego.y.5				 60
+%define	ego.y.4				 82
+%define	ego.y.3				106
+%define	ego.y.2				137
+%define	ego.y.1				150
+%define	ego.y.0				156	[	Bottom of ladder
+%define	ego.y.floor			167
+
+%define	ladder.y				166	[	Ladder locations
+%define	ladder.left			 20
+%define	ladder.right			124
+
+
+					[	LOCAL VARIABLES:
+
+%define	toy.21				lcl0		[	Contents of each cubbyhole.
+%define	toy.22				lcl1		[	Toy.##'s match ego.locations
+%define	toy.23				lcl2
+%define	toy.24				lcl3
+%define	toy.25				lcl4
+%define	toy.31				lcl5
+%define	toy.32				lcl6
+%define	toy.33				lcl7
+%define	toy.34				lcl8
+%define	toy.35				lcl9
+%define	toy.41				lcl10
+%define	toy.42				lcl11
+%define	toy.43				lcl12
+%define	toy.44				lcl13
+%define	toy.45				lcl14
+%define	toy.51				lcl15
+%define	toy.52				lcl16
+%define	toy.53				lcl17
+%define	toy.54				lcl18
+%define	toy.55				lcl19
+%define	toy.61				lcl20
+%define	toy.62				lcl21
+%define	toy.63				lcl22
+%define	toy.64				lcl23
+%define	toy.65				lcl24
+%define	toy.71				lcl25
+%define	toy.72				lcl26
+%define	toy.73				lcl27
+%define	toy.74				lcl28
+%define	toy.75				lcl29
+%define	minutes				lcl30
+%define	ten.seconds			lcl31
+%define	seconds				lcl32
+%define	old.seconds			lcl33
+%define	toys.to.fall			lcl34
+%define	fallen.toys.counter		lcl35
+%define	train.minutes			lcl36
+%define	train.ten.seconds		lcl37
+%define	train.seconds			lcl38
+%define	toy					lcl39
+%define	ladder.distance		lcl40
+%define	nearest.toy			lcl41
+%define	toy.in.hand			lcl42
+%define	toys.on.shelf			lcl43
+%define	max.toys.on.shelf		lcl44
+%define	switch.toggle			lcl45
+%define	ego.step.size			lcl46
+%define	toy.ptr				lcl47
+%define	toys.since.last.train	lcl48
+%define	train.status			lcl49
+
+%define	sound.done			lf0
+%define	toy.hit.floor			lf1
+%define	bars.in.place			lf2
+%define	remove.bars			lf3
+%define	bars.down				lf4
+%define	start.a.toy			lf5
+%define	on.floor				lf6
+%define	on.ladder				lf7
+%define	moving.ladder			lf8
+%define	toy.in.air			lf9
+
+%define	toy.timer				timer.1
+%define	train.timer			timer.2
+%define	screen.shaker			wait.1
+%define	toy.fall.speed			wait.2
+
+
+									[   alloc actual view#
+%object	a.ladder				obj.10	[	1000	  988   147v
+%object	a.toy				obj.2	[	 200	  196   141v
+%object	a.switch				obj.128.1	[	 128	  116   149v
+%object	a.bar.1				obj.3	[	 300	  236   148v
+%object	a.bar.2				obj.4	[	 400	  236   148v
+%object	a.bar.3				obj.400.1	[	 400	  236   148v
+%object	a.bar.4				obj.400.2	[	 400	  236   148v
+%object	a.bar.5				obj.350	[	 350	  236   148v	
+
+
+					[	INITIALIZE ROOM:
+
+if (init.log)
+	{
+	set.horizon( 53);
+	set( no.script);
+
+	correct.pay = 0;
+	incorrect.pay = 0;
+	reset( no.cycling);
+	reset( keep.cycling);
+
+	load.logics( job.logics);
+	load.logics( earned.money.logics);
+
+	load.view( v.ego.toy.job);
+	load.view( v.ego.toy.job.hand.out);
+	load.view( v.ego.toy.job.climbing);
+	load.view( v.ego.toy.job.climbing.hand.out);
+	load.view( v.toys);
+	load.view( v.toy.splat);
+	load.view( v.toy.store.ladder);
+	load.view( v.toy.store.bar);
+	load.view( v.toy.store.switch);
+
+	load.sound( s.ok);
+	load.sound( s.wrong);
+	load.sound( m.job);
+	load.sound( s.toy.falling);
+	load.sound( s.toy.splat);
+	load.sound( s.toy.train.coming);
+	load.sound( s.toy.train.whistle);
+	load.sound( s.toy.train.leaving);
+	load.sound( s.game.over);
+
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	if (level == beginning)
+		{
+		correct.pay = correct.pay.beginning;
+		incorrect.pay = incorrect.pay.beginning;
+		max.toys.on.shelf = 10;
+		train.minutes = 1;
+		train.ten.seconds = 1;
+		train.seconds = 9;
+		toys.to.fall = 4;
+		speed = normal;
+		toy.fall.speed = 5;
+		ego.step.size = 2;
+		ladder.distance = 6;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			correct.pay = correct.pay.intermediate;
+			incorrect.pay = incorrect.pay.intermediate;
+			max.toys.on.shelf = 20;
+			train.minutes = 1;
+			train.ten.seconds = 0;
+			train.seconds = 4;
+			toys.to.fall = 5;
+			toy.fall.speed = 6;
+			speed = halffast;
+			ego.step.size = 2;
+			ladder.distance = 6;
+			}
+		else
+			{
+			correct.pay = correct.pay.advanced;
+			incorrect.pay = incorrect.pay.advanced;
+			max.toys.on.shelf = 30;
+			train.minutes = 0;
+			train.ten.seconds = 4;
+			train.seconds = 9;
+			toys.to.fall = 6;
+			toy.fall.speed = 7;
+			speed = halffast;
+			ego.step.size = 3;
+			ladder.distance = 5;
+			}
+		}
+
+
+	minutes = train.minutes;
+	ten.seconds = train.ten.seconds;
+	seconds = train.seconds;
+
+
+
+[	OK, Sandy -- stock them shelves!!
+
+	toys.on.shelf = 0;
+	view = 141;
+	priority = 4;
+	box = 4;
+
+	:pick.toy.and.cell				[	At the other end, if x != 0
+	x = 0;						[		we have a match.
+	random( 1, 30, work);				[	Work = cubbyhole number.
+	random( 1, 20, cell);				[	Cell = the toy which will appear.
+
+	toy = cell;
+	--cell;
+	loop = 0;
+	if (cell > 9)
+		{
+		loop = 1;
+		cell -= 10;
+		}
+
+	if (work ==  1 && !toy.21)	{toy.21 = toy;x = toy.x.20;y = toy.y.1;}
+	if (work ==  2 && !toy.22)	{toy.22 = toy;x = toy.x.20;y = toy.y.2;}
+	if (work ==  3 && !toy.23)	{toy.23 = toy;x = toy.x.20;y = toy.y.3;}
+	if (work ==  4 && !toy.24)	{toy.24 = toy;x = toy.x.20;y = toy.y.4;}
+	if (work ==  5 && !toy.25)	{toy.25 = toy;x = toy.x.20;y = toy.y.5;}
+	if (work ==  6 && !toy.31)	{toy.31 = toy;x = toy.x.30;y = toy.y.1;}
+	if (work ==  7 && !toy.32)	{toy.32 = toy;x = toy.x.30;y = toy.y.2;}
+	if (work ==  8 && !toy.33)	{toy.33 = toy;x = toy.x.30;y = toy.y.3;}
+	if (work ==  9 && !toy.34)	{toy.34 = toy;x = toy.x.30;y = toy.y.4;}
+	if (work == 10 && !toy.35)	{toy.35 = toy;x = toy.x.30;y = toy.y.5;}
+	if (work == 11 && !toy.41)	{toy.41 = toy;x = toy.x.40;y = toy.y.1;}
+	if (work == 12 && !toy.42)	{toy.42 = toy;x = toy.x.40;y = toy.y.2;}
+	if (work == 13 && !toy.43)	{toy.43 = toy;x = toy.x.40;y = toy.y.3;}
+	if (work == 14 && !toy.44)	{toy.44 = toy;x = toy.x.40;y = toy.y.4;}
+	if (work == 15 && !toy.45)	{toy.45 = toy;x = toy.x.40;y = toy.y.5;}
+	if (work == 16 && !toy.51)	{toy.51 = toy;x = toy.x.50;y = toy.y.1;}
+	if (work == 17 && !toy.52)	{toy.52 = toy;x = toy.x.50;y = toy.y.2;}
+	if (work == 18 && !toy.53)	{toy.53 = toy;x = toy.x.50;y = toy.y.3;}
+	if (work == 19 && !toy.54)	{toy.54 = toy;x = toy.x.50;y = toy.y.4;}
+	if (work == 20 && !toy.55)	{toy.55 = toy;x = toy.x.50;y = toy.y.5;}
+	if (work == 21 && !toy.61)	{toy.61 = toy;x = toy.x.60;y = toy.y.1;}
+	if (work == 22 && !toy.62)	{toy.62 = toy;x = toy.x.60;y = toy.y.2;}
+	if (work == 23 && !toy.63)	{toy.63 = toy;x = toy.x.60;y = toy.y.3;}
+	if (work == 24 && !toy.64)	{toy.64 = toy;x = toy.x.60;y = toy.y.4;}
+	if (work == 25 && !toy.65)	{toy.65 = toy;x = toy.x.60;y = toy.y.5;}
+	if (work == 26 && !toy.71)	{toy.71 = toy;x = toy.x.70;y = toy.y.1;}
+	if (work == 27 && !toy.72)	{toy.72 = toy;x = toy.x.70;y = toy.y.2;}
+	if (work == 28 && !toy.73)	{toy.73 = toy;x = toy.x.70;y = toy.y.3;}
+	if (work == 29 && !toy.74)	{toy.74 = toy;x = toy.x.70;y = toy.y.4;}
+	if (work == 30 && !toy.75)	{toy.75 = toy;x = toy.x.70;y = toy.y.5;}
+	
+	if (x)						[	We have a match!
+		{
+		++toys.on.shelf;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+		}
+
+	if (toys.on.shelf != max.toys.on.shelf)
+		{
+		goto pick.toy.and.cell;
+		}
+    
+	toy.in.hand = 0;
+	toy = 0;
+
+
+	animate.obj( a.ladder);
+	position( a.ladder, 77, ladder.y);
+	set.view( a.ladder, v.toy.store.ladder);
+	set.priority( a.ladder, 12);
+	draw( a.ladder);
+	stop.update( a.ladder);
+
+
+	animate.obj( a.switch);
+	position( a.switch, 141, 160);
+	set.view( a.switch, v.toy.store.switch);
+	set.cel.f( a.switch, switch.toggle);
+	stop.cycling( a.switch);
+	set.priority( a.switch, 15);
+	draw( a.switch);
+
+
+	animate.obj( a.toy);
+	ignore.objs( a.toy);
+	ignore.blocks( a.toy);
+	ignore.horizon( a.toy);
+	position( a.toy, 0, 159);
+	set.view( a.toy, v.toys);
+	set.priority( a.toy, 15);
+	fix.loop(a.toy);
+	stop.cycling( a.toy);
+
+	
+	animate.obj( a.bar.1);
+	ignore.objs( a.bar.1);
+	ignore.horizon( a.bar.1);
+	position( a.bar.1, 22, 37);
+	set.view( a.bar.1, v.toy.store.bar);
+	set.cel( a.bar.1, 0);
+	set.priority( a.bar.1, 15);
+
+	animate.obj( a.bar.2);
+	ignore.objs( a.bar.2);
+	position( a.bar.2, 22, 61);
+	set.view( a.bar.2, v.toy.store.bar);
+	set.cel( a.bar.2, 0);
+	set.priority( a.bar.2, 15);
+
+	animate.obj( a.bar.3);
+	ignore.objs( a.bar.3);
+	position( a.bar.3, 22, 85);
+	set.view( a.bar.3, v.toy.store.bar);
+	set.cel( a.bar.3, 0);
+	set.priority( a.bar.3, 15);
+
+	animate.obj( a.bar.4);
+	ignore.objs( a.bar.4);
+	position( a.bar.4, 22, 109);
+	set.view( a.bar.4, v.toy.store.bar);
+	set.cel( a.bar.4, 0);
+	set.priority( a.bar.4, 15);
+
+	animate.obj( a.bar.5);
+	ignore.objs( a.bar.5);
+	position( a.bar.5, 22, 133);
+	set.view( a.bar.5, v.toy.store.bar);
+	set.cel( a.bar.5, 0);
+	set.priority( a.bar.5, 15);
+
+
+	set.view( ego, v.ego.toy.job);
+	ignore.objs( ego);
+	set.priority( ego, 14);
+	step.size( ego, ego.step.size);
+	ego.location = 30;
+	x = 40;
+	y = ego.y.floor;
+	position.f( ego, x, y);
+	draw( ego);
+
+	show.pic( );
+	call( job.logics);
+	return( );
+	}							[	END init.logs
+
+
+
+if (current.status == waiting.to.leave)
+	{
+	erase( a.toy);
+	stop.update( ego);
+	goto exit;
+	}
+else
+	{
+	if (current.status == starting)
+		{
+		stop.update( ego);
+		goto exit;
+		}
+	else
+		{
+		if (current.status == ready.to.start)
+			{
+			current.status = playing.game;
+			set( start.a.toy);
+			set( next.frame);
+			update.window = earned.money;
+			display( 21, 5, 21);		[	"The Amquack Special will pass in
+			display( 22, 10, 22);		[	"minutes,   seconds.
+			goto no.input;
+			}
+		}
+	}
+	
+
+[*****
+:where.da.fahgawee
+[*****
+
+if  (on.ladder &&			 		[	No walking off the ladder.
+    (ego.dir == ego.right ||
+	ego.dir == ego.left ||
+	ego.dir == ego.up.left ||
+	ego.dir == ego.up.right ||
+	ego.dir == ego.down.left ||
+	ego.dir == ego.down.right))
+	{
+	ego.dir = ego.stopped;
+	set.loop( ego, facing.right);
+	}
+
+[	Set ego's location on the grid, from right-to-left.  
+[Set toy.ptr to lowest toy in that column.
+
+ego.location = 80;
+if (ego.x < ego.x.80)				{ego.location = 70;toy.ptr = 65;}
+if (ego.x < ego.x.70)				{ego.location = 60;toy.ptr = 60;}
+if (ego.x < ego.x.60)				{ego.location = 50;toy.ptr = 55;}
+if (ego.x < ego.x.50)				{ego.location = 40;toy.ptr = 50;}
+if (ego.x < ego.x.40)				{ego.location = 30;toy.ptr = 45;}
+if (ego.x < ego.x.30)				{ego.location = 20;toy.ptr = 40;}
+if (ego.x < ego.x.20)				{ego.location = 10;}
+
+[	Now see if he's above the ground.  Toy.ptr already aimed at toy.X1.
+if (ego.y != ego.y.floor)
+	{
+	reset( on.floor);
+	set( on.ladder);
+	if (ego.y < ego.y.1)			{++ego.location;}
+	if (ego.y < ego.y.2)			{++ego.location;++toy.ptr;}
+	if (ego.y < ego.y.3)			{++ego.location;++toy.ptr;}
+	if (ego.y < ego.y.4)			{++ego.location;++toy.ptr;}
+	if (ego.y < ego.y.5)			{++ego.location;++toy.ptr;}
+	}
+else
+	{
+	set( on.floor);
+	reset( on.ladder);
+	}
+
+if ((ego.y == ego.y.floor ||
+	bars.in.place))				[	Can't put up toys if bars in way.
+	{
+	toy.ptr = 255;					[	Var 255 is always a 0!
+	}
+
+nearest.toy =@ toy.ptr;
+
+
+[	Work around ego, lack of block, moving toys, moving ladders, etc.
+if (moving.ladder)					[	Move ladder with ego, if needed.
+	{
+	x = 0;
+	y = 0;
+
+	if ((ego.dir == ego.left ||
+		ego.dir == ego.down.left))
+		{
+		if (ego.x < ladder.left)	 	[	Can't go that far.
+			{
+			ego.dir = ego.stopped;
+			x = -1;
+			}
+		else
+			{
+			x -= ego.step.size;
+			}
+
+		get.posn( a.ladder, work, target.y);
+		if (work > ladder.left)
+			{
+			reposition( a.ladder, x, y);
+			}
+		}
+	else
+		{
+		if ((ego.dir == ego.right ||
+			ego.dir == ego.down.right))
+			{
+			if (ego.x > ladder.right)
+				{
+				ego.dir = ego.stopped;
+				x = 1;
+				}
+			else
+				{
+				x = ego.step.size;
+				}
+
+			get.posn( a.ladder, work, target.y);
+			if (work < ladder.right)
+				{
+				reposition( a.ladder, x, y);
+				}
+			}
+		}
+	}
+else
+	{
+	if (toy.in.hand)				[	Move toy with ego, if needed.
+		{
+		get.posn( a.toy, source.x, source.y);	
+		x = ego.x;
+		y = ego.y;
+		x -= source.x;
+		y -= source.y;
+		current.loop( ego, work);
+		if (work == facing.left)
+			{
+			x -= ego.toy.offset.x.left;
+			if (toy.in.hand > 16)	[	handle the skinny bishops
+				{
+				x += 2;
+				}
+			}
+		else
+			{
+			x += ego.toy.offset.x.right;
+			}
+		y -= ego.toy.offset.y;
+		reposition( a.toy, x, y);
+		}
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (doit)
+	{
+	reset( doit);
+	}
+else
+	{
+	goto train.clock;
+	}
+
+
+if  (ego.location == 10 &&   			[	At the new toy belt.
+	train.status != train.here)
+	{
+	if (!toy.in.hand)				[	Get the toy that's there.
+		{
+		toy.in.hand = toy;
+		toy = 0;
+		get.posn( a.toy, source.x, source.y);	
+		x = ego.x;
+		y = ego.y;
+		x -= source.x;
+		y -= source.y;
+		current.loop( ego, work);
+		if (work == facing.left)
+			{
+			x -= ego.toy.offset.x.left;
+			}
+		else
+			{
+			x += ego.toy.offset.x.right;
+			}
+		y -= ego.toy.offset.y;
+		reposition( a.toy, x, y);
+
+		set.view( ego, v.ego.toy.job.hand.out);
+		sound( s.ok, done);
+		}
+	else							[	Put the toy he has back on belt.
+		{
+		toy = toy.in.hand;
+		toy.in.hand = 0;
+		get.posn( a.toy, source.x, source.y);
+		x = toy.starting.x;
+		y = toy.starting.y;
+		x -= source.x;
+		y -= source.y;
+		reposition( a.toy, x, y);
+		draw( a.toy);
+
+		set.view( ego, v.ego.toy.job);
+		sound( s.ok, done);
+		}
+	}
+else
+	{
+	if (toy.in.hand)				[	Handle toys, if any.
+		{
+		if (toy.in.hand == nearest.toy) [	Is it a hit?
+			{
+			erase( a.toy);
+			sound( s.ok, done);
+			++toys.since.last.train;
+			money.to.fix = earned.money;
+			add.cents = correct.pay;
+			call( earned.money.logics);
+			set( start.a.toy);
+			}
+		else
+			{
+			get.posn( a.toy, x, y);
+			y = splat.y;
+			move.obj.f( a.toy, x, y, toy.fall.speed, toy.hit.floor);
+			set( toy.in.air);
+			sound( s.toy.falling, done);
+			}
+
+		toy.in.hand = 0;
+		if (ego.y < ego.y.floor)
+			{
+			set.view( ego, v.ego.toy.job.climbing);
+			}
+		else
+			{
+			set.view( ego, v.ego.toy.job);
+			}
+		}
+	else
+		{
+		if (ego.location == 80)		[	Next, handle toggle switch.
+			{
+			program.control( );
+			stop.motion( ego);
+			set( no.cycling);
+			if (switch.toggle)
+				{
+				switch.toggle = 0;
+				}
+			else
+				{
+				switch.toggle = 1;
+				}
+			set.cel.f( a.switch, switch.toggle);
+
+			if (!bars.in.place)
+				{
+				set( bars.in.place);				
+				draw( a.bar.1);
+				draw( a.bar.2);
+				draw( a.bar.3);
+				draw( a.bar.4);
+				draw( a.bar.5);
+				end.of.loop( a.bar.1, done);
+				end.of.loop( a.bar.2, done);
+				end.of.loop( a.bar.3, done);
+				end.of.loop( a.bar.4, done);
+				end.of.loop( a.bar.5, done);
+				}
+			else
+				{
+				set( remove.bars);
+				}
+			}
+		else
+			{
+			if  (on.floor &&
+			    (ego.location == 20 ||
+				ego.location == 30 ||
+				ego.location == 40 ||
+				ego.location == 50 ||
+				ego.location == 60 ||
+			     ego.location == 70))  [	All that's left is the ladder.
+				{
+				if (moving.ladder)
+					{
+					reset( moving.ladder);
+					stop.update( a.ladder);
+					force.update( a.ladder);
+					sound( s.ok, done);
+					}
+				else
+					{
+					distance( ego, a.ladder, work);
+					if  (work < ladder.distance &&
+						current.status == playing.game)
+						{
+						set( moving.ladder);
+						start.update( a.ladder);
+						sound( s.ok, done);
+						}
+					else
+						{
+						sound( s.wrong, done);
+						}
+					}
+				}
+			}
+		}
+	}
+		
+
+[*****
+:train.clock		[	Compute and display the time before the next train.
+[*****
+
+if (current.status == playing.game &&
+	 train.status != train.here &&
+	 train.status != train.coming)
+	 {
+	 if (old.seconds != elapsed.seconds)
+		{
+		old.seconds = elapsed.seconds;
+
+		y = 22;
+		set.text.attribute( 15, 0);
+		x = 10;
+		++minutes;
+		display.f( y, x, minutes);
+		--minutes;
+		
+		x = 21;
+		++ten.seconds;
+		display.f( y, x, ten.seconds);
+		--ten.seconds;
+	
+		++x;
+		++seconds;
+		display.f( y, x, seconds);
+		--seconds;
+
+		if (seconds)
+			{
+			--seconds;
+			}
+		else
+			{
+			if (ten.seconds)
+				{
+				--ten.seconds;
+				seconds = 9;
+				}
+			else
+				{
+				if (minutes)
+					{
+					--minutes;
+					ten.seconds = 5;
+					seconds = 9;
+					}
+				else				[	Start the toys falling.
+					{
+					train.timer = train.coming.time;
+					train.status = train.coming;
+					set( sound.done);
+					}
+				}
+			}
+		}
+	}		
+
+
+[*****
+:training
+[*****
+
+--train.timer;						[	Times the train script
+if (train.timer == 1)
+	{
+	if (train.status == train.coming)
+		{
+		train.status = train.here;
+		train.timer = train.here.time;
+		fallen.toys.counter = toys.to.fall;
+		toy.timer = 2;
+   		screen.shaker = 12;
+
+		toy.in.hand = 0;			[	if he had one, he doesn't now.
+		toy = 0;
+		erase( a.toy);
+		reset( toy.in.air);
+		
+		if (on.floor)
+			{
+			set.view( ego, v.ego.toy.job);
+			}
+		else
+			{
+			set.view( ego, v.ego.toy.job.climbing);
+			}
+		}
+	else
+		{
+		if (train.status == train.here)
+			{
+			if (fallen.toys.counter && !bars.in.place)
+				{
+				++train.timer;
+				}
+			else
+				{
+				train.status = train.leaving;	[	trigger next line
+				}
+			}
+
+		if (train.status == train.leaving)
+			{
+			train.status = train.not.here;
+			erase( a.toy);
+			reset( toy.in.air);
+			set( start.a.toy);
+			sound( s.toy.train.leaving, sound.done);
+			toy.timer = 0;
+			screen.shaker = 0;
+			minutes = train.minutes;
+			ten.seconds = train.ten.seconds;
+			seconds = train.seconds;
+			}
+		}
+	}
+
+
+if (train.status == train.here)
+	{
+	--screen.shaker;
+	if (screen.shaker == 11)
+		{
+		shake.screen( 4);
+		}
+	if (screen.shaker == 1)
+		{
+		screen.shaker = 22;
+		}
+
+
+	if (!bars.in.place && !toy.in.air)
+		{
+		--toy.timer;
+		if  (toy.timer == 1)
+			{
+			:pick.falling.toy
+			random( 1, 20, toy);		[	Pick a toy from current stock.
+			x = 0;
+			y = 0;
+		
+			[	The following are mixed up a little for random appearance.
+			if (toy == toy.21)		{x = toy.x.20;y = toy.y.1;}
+			if (toy == toy.22)		{x = toy.x.20;y = toy.y.2;}
+			if (toy == toy.23)		{x = toy.x.20;y = toy.y.3;}
+			if (toy == toy.24)		{x = toy.x.20;y = toy.y.4;}
+			if (toy == toy.25)		{x = toy.x.20;y = toy.y.5;}
+			if (toy == toy.71)		{x = toy.x.70;y = toy.y.1;}
+			if (toy == toy.72)		{x = toy.x.70;y = toy.y.2;}
+			if (toy == toy.73)		{x = toy.x.70;y = toy.y.3;}
+			if (toy == toy.74)		{x = toy.x.70;y = toy.y.4;}
+			if (toy == toy.75)		{x = toy.x.70;y = toy.y.5;}
+			if (toy == toy.41)		{x = toy.x.40;y = toy.y.1;}
+			if (toy == toy.42)		{x = toy.x.40;y = toy.y.2;}
+			if (toy == toy.43)		{x = toy.x.40;y = toy.y.3;}
+			if (toy == toy.44)		{x = toy.x.40;y = toy.y.4;}
+			if (toy == toy.45)		{x = toy.x.40;y = toy.y.5;}
+			if (toy == toy.51)		{x = toy.x.50;y = toy.y.1;}
+			if (toy == toy.52)		{x = toy.x.50;y = toy.y.2;}
+			if (toy == toy.53)		{x = toy.x.50;y = toy.y.3;}
+			if (toy == toy.54)		{x = toy.x.50;y = toy.y.4;}
+			if (toy == toy.55)		{x = toy.x.50;y = toy.y.5;}
+			if (toy == toy.31)		{x = toy.x.30;y = toy.y.1;}
+			if (toy == toy.32)		{x = toy.x.30;y = toy.y.2;}
+			if (toy == toy.33)		{x = toy.x.30;y = toy.y.3;}
+			if (toy == toy.34)		{x = toy.x.30;y = toy.y.4;}
+			if (toy == toy.35)		{x = toy.x.30;y = toy.y.5;}
+			if (toy == toy.61)		{x = toy.x.60;y = toy.y.1;}
+			if (toy == toy.62)		{x = toy.x.60;y = toy.y.2;}
+			if (toy == toy.63)		{x = toy.x.60;y = toy.y.3;}
+			if (toy == toy.64)		{x = toy.x.60;y = toy.y.4;}
+			if (toy == toy.65)		{x = toy.x.60;y = toy.y.5;}
+			if (!x)				{goto pick.falling.toy;}
+		
+			cell = toy;
+			--cell;
+			loop = 0;
+			if (cell > 9)
+				{
+				cell -= 10;
+				++loop;
+				}
+		
+			set.cel.f( a.toy, cell);
+			set.loop.f( a.toy, loop);
+			position.f( a.toy, x, y);
+			draw( a.toy);
+			y = splat.y;
+			move.obj.f( a.toy, x, y, toy.fall.speed, toy.hit.floor);
+			set( toy.in.air);
+			sound( s.toy.falling, sound.done);
+			
+			if (toys.since.last.train)
+				{
+				--toys.since.last.train;
+				money.to.fix = earned.money;
+				sub.cents = incorrect.pay;
+				call( earned.money.logics);
+				}
+
+			--fallen.toys.counter;
+			if (fallen.toys.counter)
+				{
+[				random( 20, 50, toy.timer);
+				toy.timer = 3;		[	tighten up; do toys more often
+				}
+			else
+				{
+				train.timer = 2;	[	trigger "train.leaving"
+				}
+			}
+		}
+	}
+	
+
+[*****
+:no.input
+[*****
+
+if  (start.a.toy && 
+	!toy.in.air &&
+	current.status == playing.game &&
+	train.status != train.here)
+	{
+	reset( start.a.toy);
+
+	:pick.new.toy
+	random( 1, 20, toy);				[	pick a toy to appear.
+
+	reset( have.match);
+	if (toy == toy.21)		{set( have.match);}
+	if (toy == toy.22)		{set( have.match);}
+	if (toy == toy.23)		{set( have.match);}
+	if (toy == toy.24)		{set( have.match);}
+	if (toy == toy.25)		{set( have.match);}
+	if (toy == toy.31)		{set( have.match);}
+	if (toy == toy.32)		{set( have.match);}
+	if (toy == toy.33)		{set( have.match);}
+	if (toy == toy.34)		{set( have.match);}
+	if (toy == toy.35)		{set( have.match);}
+	if (toy == toy.41)		{set( have.match);}
+	if (toy == toy.42)		{set( have.match);}
+	if (toy == toy.43)		{set( have.match);}
+	if (toy == toy.44)		{set( have.match);}
+	if (toy == toy.45)		{set( have.match);}
+	if (toy == toy.51)		{set( have.match);}
+	if (toy == toy.52)		{set( have.match);}
+	if (toy == toy.53)		{set( have.match);}
+	if (toy == toy.54)		{set( have.match);}
+	if (toy == toy.55)		{set( have.match);}
+	if (toy == toy.61)		{set( have.match);}
+	if (toy == toy.62)		{set( have.match);}
+	if (toy == toy.63)		{set( have.match);}
+	if (toy == toy.64)		{set( have.match);}
+	if (toy == toy.65)		{set( have.match);}
+	if (toy == toy.71)		{set( have.match);}
+	if (toy == toy.72)		{set( have.match);}
+	if (toy == toy.73)		{set( have.match);}
+	if (toy == toy.74)		{set( have.match);}
+	if (toy == toy.75)		{set( have.match);}
+	if (!have.match)		{goto pick.new.toy;}
+
+	cell = toy;
+	--cell;
+	loop = 0;
+	if (cell > 9)
+		{
+		cell -= 10;
+		++loop;
+		}
+
+	set.cel.f( a.toy, cell);
+	set.loop.f( a.toy, loop);
+	position( a.toy, 0, toy.starting.y);
+	draw( a.toy);
+	move.obj( a.toy, toy.starting.x, toy.starting.y, 0, done);
+	}
+
+
+if (remove.bars)
+	{
+	reset( remove.bars);
+	program.control( );
+	switch.toggle = 0;
+	set.cel.f( a.switch, switch.toggle);
+	reverse.loop( a.bar.1, bars.down);
+	reverse.loop( a.bar.2, bars.down);
+	reverse.loop( a.bar.3, bars.down);
+	reverse.loop( a.bar.4, bars.down);
+	reverse.loop( a.bar.5, bars.down);
+	}
+
+
+if (bars.down)
+	{
+	reset( bars.down);
+	reset( bars.in.place);
+	player.control( );
+	start.motion( ego);
+	reset( no.cycling);
+	erase( a.bar.1);
+	erase( a.bar.2);
+	erase( a.bar.3);
+	erase( a.bar.4);
+	erase( a.bar.5);
+	if (train.status == train.here)
+		{
+		toy.timer = 2;				[	trigger a falling toy next pass
+		}
+	}
+
+
+if (toy.hit.floor)
+	{
+	reset( toy.hit.floor);
+	reset( toy.in.air);
+	set( start.a.toy);
+	sound( s.toy.splat, done);
+	erase( a.toy);
+
+	get.posn( a.toy, x, y);
+	view = 146;					[	view # of v.toy.splat
+	loop = 0;
+	cell = 0;
+	random( 164, 166, y);
+	priority = 11;
+	box = 4;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+	}
+
+
+if (hit.special && on.ladder)
+	{
+	reset( on.ladder);
+	set( on.floor);
+	observe.blocks( ego);
+	x = 1;
+	y = ego.y.floor;
+	y -= ego.y;
+	reposition( ego, x, y);
+	if (toy.in.hand)
+		{
+		set.view( ego, v.ego.toy.job.hand.out);
+		}
+	else
+		{
+		set.view( ego, v.ego.toy.job);
+		}
+	}
+
+
+distance( ego, a.ladder, work);
+if   (on.floor && 
+	!on.ladder &&
+	!moving.ladder &&
+	 work < ladder.distance &&
+	(ego.dir == ego.up ||
+	 ego.dir == ego.up.right ||
+	 ego.dir == ego.up.left))
+	{
+	set( on.ladder);
+	ignore.blocks( ego);
+	ignore.objs( ego);
+	get.posn( a.ladder, x, y);
+	x -= 1;						[	patch 'cause ladder view's wider
+	y = ego.y.0;
+	x -= ego.x;
+	y -= ego.y;
+	reposition( ego, x, y);
+	if (toy.in.hand)
+		{
+		set.view( ego, v.ego.toy.job.climbing.hand.out);
+		}
+	else
+		{
+		set.view( ego, v.ego.toy.job.climbing);
+		}
+	}
+
+
+if (update.window == earned.money)
+	{
+	update.window = 0;
+	earned.money.x = 33;
+	earned.money.y = 24;
+	call( earned.money.logics);
+	}
+
+
+if (sound.done)
+	{
+	reset( sound.done);
+	if (train.status == train.coming)
+		{
+		sound( s.toy.train.coming, sound.done);
+		}
+	else
+		{
+		if (train.status == train.here)
+			{
+			sound( s.toy.train.whistle, sound.done);
+			}
+		}
+	}
+
+
+[*****
+:exit							[(the dynamic tests for leaving room)
+[*****
+
+call( job.logics);
+call( earned.money.logics);

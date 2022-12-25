@@ -1,0 +1,10 @@
+[messages for room 19 -- rm.pg.south -- crossing the tracks
+
+
+%message	16	"
+Donald likes to come to the Duckburg"
+%message	17	"
+City Park to watch his nephews play"
+%message	18	"
+on the toys he buys."
+

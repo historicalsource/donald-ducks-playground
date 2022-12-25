@@ -1,0 +1,6 @@
+[messages for room 34 -- payroll logics
+
+%message	16	"Press button to leave."
+%message	17	"You need to spend some of your money.
+  We're out of money here!"
+

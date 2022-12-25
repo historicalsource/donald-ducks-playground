@@ -1,0 +1,132 @@
+[logics for room 36 -- owes.money.logics
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+[Main room logic sets "money.to.fix" & "add.dollars."  This dynamic catches 
+[them, recomputes earnings, and sets "update.window."  Main room catches
+["update.window" and sets "owes.money.x & y."  This logic catches them, and
+[prints the result.
+
+
+if (init.log)
+	{
+	}
+
+
+if (money.to.fix == owes.money)
+	{
+
+	if ((add.dollars || add.cents))
+		{
+		owes.cents += add.cents;
+		owes.dollars += add.dollars;
+		}
+	else
+		{
+		if ((sub.dollars || sub.cents))
+			{
+	
+			:do.sub.cents
+			if (owes.cents < sub.cents)
+				{
+				if (!owes.ten.cents)
+					{
+					if (!owes.dollars)
+						{
+						--owes.ten.dollars;
+						owes.dollars += 10;
+						}
+					--owes.dollars;
+					owes.ten.cents += 10;
+					}
+				owes.cents += 10;
+				--owes.ten.cents;
+				goto do.sub.cents;
+				}
+			owes.cents -= sub.cents;
+	
+			:do.sub.dollars
+			if (owes.dollars < sub.dollars)
+				{
+				--owes.ten.dollars;
+				owes.dollars += 10;
+				}
+			owes.dollars -= sub.dollars;
+			}
+		}
+	
+	update.window = money.to.fix;
+	money.to.fix = 0;
+	add.dollars = 0;
+	add.cents = 0;
+	sub.dollars = 0;
+	sub.cents = 0;
+
+	:do.add.cents
+	if (owes.cents > 9)
+		{
+		owes.cents -= 10;
+		++owes.ten.cents;
+		goto do.add.cents;
+		}
+	
+	:do.add.ten.cents
+	if (owes.ten.cents > 9)
+		{
+		owes.ten.cents -= 10;
+		++owes.dollars;
+		goto do.add.ten.cents;
+		}
+	
+	:do.add.dollars
+	if (owes.dollars > 9)
+		{
+		++owes.ten.dollars;
+		owes.dollars -= 10;
+		goto do.add.dollars;
+		}
+	}
+
+
+if (owes.money.y)					[	Display what he owes.
+	{
+	message = dollar;
+	display.f( owes.money.y, owes.money.x, message);
+
+	++owes.money.x;
+	if (owes.ten.dollars)
+		{
+		++owes.ten.dollars;
+		display.f( owes.money.y, owes.money.x, owes.ten.dollars);
+		--owes.ten.dollars;
+		}
+	else
+		{
+		message = space;
+		display.f( owes.money.y, owes.money.x, message);
+		}
+
+	++owes.money.x;
+	++owes.dollars;
+	display.f( owes.money.y, owes.money.x, owes.dollars);
+	--owes.dollars;
+
+	++owes.money.x;
+	message = period;
+	display.f( owes.money.y, owes.money.x, message);
+
+	++owes.money.x;
+	++owes.ten.cents;
+	display.f( owes.money.y, owes.money.x, owes.ten.cents);
+	--owes.ten.cents;
+
+	++owes.money.x;
+	++owes.cents;
+	display.f( owes.money.y, owes.money.x, owes.cents);
+	--owes.cents;
+
+	owes.money.x = 0;
+	owes.money.y = 0;
+	}

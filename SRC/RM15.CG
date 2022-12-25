@@ -1,0 +1,776 @@
+[logics for room 15 -- rm.playground.north
+
+%include "gamedefs"
+%include "rm15.msg"
+
+
+%define	close.enough				15
+
+
+%define	ego.hit.ground				lf0
+%define	music.done				lf1
+
+%define	toy.in.hand				lcl0
+%define	toy.playing.on				lcl1
+[	%define	toys.in.room				lcl2
+%define	distance.to.somersault.bar	lcl3
+%define	distance.to.parallel.bars	lcl4
+%define	distance.to.trampoline		lcl5
+%define	distance.to.tetherball.pole	lcl6
+%define	closest.toy				lcl7
+%define	toy.to.draw				lcl8
+
+%define	message.timer				wait.1
+
+
+										[  alloc actual view#
+%object	a.somersault.bar		obj.5		[   500	464	132v-32v
+%object	a.parallel.bars		obj.4		[   400	364	138v-38v
+%object	a.trampoline			obj.3		[   300	220	130v-30v
+%object	a.tetherball.pole		obj.350		[   350	324	137v-37v
+[object	a.rope				overlay.pic!
+
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	set.horizon( 89);
+
+	if (force.a.test)
+		{
+		get( i.rope);
+		get( i.somersault.bar);
+		get( i.parallel.bars);
+		get( i.trampoline);
+		get( i.tetherball.pole);
+		}
+
+	if (has( i.rope))
+		{
+		load.view( v.ego.pg.rope);
+		load.view( v.ego.pg.jumping);
+		work = pic.monkey.rope;
+		load.pic( work);
+		load.sound( s.ego.jumping);
+		}
+
+	if (has( i.somersault.bar))
+		{
+[			++toys.in.room;
+		load.view( v.ego.pg.somersault.bar);
+		load.view( v.pg.somersault.bar);
+		}
+
+	if (has( i.parallel.bars))
+		{
+[			++toys.in.room;
+		load.view( v.ego.pg.parallel.bars);
+		load.view( v.pg.parallel.bars);
+		}
+
+	if (has( i.trampoline))
+		{
+[			++toys.in.room;
+		load.view( v.ego.pg.trampoline);
+		load.view( v.pg.trampoline);
+		}
+
+	if (has( i.tetherball.pole))
+		{
+[			++toys.in.room;
+		load.view( v.ego.pg.tetherball.pole);
+		load.view( v.pg.tetherball.pole);
+		}
+
+
+	load.view( v.ego.pg);
+	load.view( v.ego.pg.ladder);
+	load.sound( m.playground);
+	set( music.done);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	if (has( i.rope))
+		{
+		work = pic.monkey.rope;
+		overlay.pic( work);
+		}
+
+	if (has( i.somersault.bar))
+		{
+		animate.obj( a.somersault.bar);
+		if (!somersault.bar.y)
+			{
+			somersault.bar.x = 57;
+			somersault.bar.y = 121;
+			}
+		position.f( a.somersault.bar, somersault.bar.x, somersault.bar.y);
+		set.view( a.somersault.bar, v.pg.somersault.bar);
+		draw( a.somersault.bar);
+		}
+
+	if (has( i.parallel.bars))
+		{
+		animate.obj( a.parallel.bars);
+		if (!parallel.bars.y)
+			{
+			parallel.bars.x = 46;
+			parallel.bars.y = 157;
+			}
+		position.f( a.parallel.bars, parallel.bars.x, parallel.bars.y);
+		set.view( a.parallel.bars, v.pg.parallel.bars);
+		work = 2;
+		cycle.frequency( a.parallel.bars, work);
+		draw( a.parallel.bars);
+		}
+
+	if (has( i.trampoline))
+		{
+		animate.obj( a.trampoline);
+		if (!trampoline.y)
+			{
+			trampoline.x = 93;
+			trampoline.y = 121;
+			}
+		position.f( a.trampoline, trampoline.x, trampoline.y);
+		set.view( a.trampoline, v.pg.trampoline);
+		work = 2;
+		cycle.frequency( a.trampoline, work);
+		draw( a.trampoline);
+		}
+
+	if (has( i.tetherball.pole))
+		{
+		animate.obj( a.tetherball.pole);
+		if (!tetherball.pole.y)
+			{
+			tetherball.pole.x = 105;
+			tetherball.pole.y = 157;
+			}
+		position.f( a.tetherball.pole, tetherball.pole.x, tetherball.pole.y);
+		set.view( a.tetherball.pole, v.pg.tetherball.pole);
+		work = 2;
+		cycle.frequency( a.tetherball.pole, work);
+		draw( a.tetherball.pole);
+		}
+
+	set.view( ego, v.ego.pg);
+	draw( ego);
+	current.status = walking;
+	show.pic( );
+	return( );
+
+	}
+
+
+
+if (toy.to.draw)
+	{
+	if (toy.to.draw == somersault.bar)
+		{
+		draw( a.somersault.bar);
+		}
+	if (toy.to.draw == parallel.bars)
+		{
+		draw( a.parallel.bars);
+		}
+	if (toy.to.draw == trampoline)
+		{
+		draw( a.trampoline);
+		}
+	if (toy.to.draw == tetherball.pole)
+		{
+		draw( a.tetherball.pole);
+		}
+	toy.to.draw = 0;
+	}
+
+
+if ((current.status == climbing ||
+	current.status == on.monkey.rope))
+	{
+	observe.blocks( ego);
+	ignore.horizon( ego);
+	}
+else
+	{
+	if (current.status == jumping)
+		{
+		set.priority( ego, 15);
+		ignore.blocks( ego);
+		ignore.horizon( ego);
+		ignore.objs( ego);
+		}
+	else
+		{
+		release.priority( ego);
+		ignore.blocks( ego);
+		observe.objs( ego);
+		observe.horizon( ego);
+		}
+	}
+
+
+
+if  (current.status == walking && 
+	ego.dir == ego.up)
+	{
+	reset( have.match);
+	if (posn( ego, 21, 146, 30, 149))	 	[	Base of left ladder
+		{
+		if (toy.in.hand)
+			{
+			set( have.match);
+			}
+		else
+			{
+			current.status = climbing;
+			observe.blocks( ego);
+			set.priority( ego, 13);
+			set.view( ego, v.ego.pg.ladder);
+			x = 26;
+			y = 140;
+			x -= ego.x;
+			y -= ego.y;
+			reposition( ego, x, y);
+			}
+		}
+	else
+		{
+		if (posn( ego, 126, 145, 135, 148)) [	Base of right ladder
+			{
+			if (toy.in.hand)
+				{
+				set( have.match);
+				}
+			else
+				{
+				current.status = climbing;
+				observe.blocks( ego);
+				set.priority( ego, 13);
+				set.view( ego, v.ego.pg.ladder);
+				x = 131;
+				y = 140;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				}
+			}
+		}
+
+	if (have.match)
+		{
+		reset( have.match);
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 17);
+			message.timer = 44;
+			}
+		}
+
+	}
+
+
+if (current.status == on.monkey.rope)
+	{
+	if  (ego.x < 27 && 			[	stopped at left end of rope
+	    (ego.dir == ego.left || 
+		ego.dir == ego.up.left))
+		{
+		stop.motion(ego);
+		start.motion(ego);
+		ego.dir = ego.up;
+		}
+
+	if  (ego.x > 129 && 			[	stopped at right end of rope
+	    (ego.dir == ego.right ||
+		ego.dir == ego.up.right))
+		{
+		stop.motion(ego);
+		start.motion(ego);
+		ego.dir = ego.up;
+		}
+
+	if   (ego.x < 35 &&	 			[	at left end of rope
+		(ego.dir == ego.down || 
+		 ego.dir == ego.down.left))
+		{
+		current.status = climbing;
+		set.priority( ego, 13);
+		set.view( ego, v.ego.pg.ladder);
+		work = 1;
+		step.size( ego, work);
+		x = 26;
+		y = 93;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	else
+		{
+		if   (ego.x > 125 &&			[	at right end of rope
+			(ego.dir == ego.down || 
+			 ego.dir == ego.down.right))
+			{
+			current.status = climbing;
+			set.priority( ego, 13);
+			set.view( ego, v.ego.pg.ladder);
+			work = 1;
+			step.size( ego, work);
+			x = 131;
+			y = 93;
+			x -= ego.x;
+			y -= ego.y;
+			reposition( ego, x, y);
+			}
+		}
+	}
+
+
+if ((useit || doit))
+	{
+	[don't reset anything!
+
+	distance.to.somersault.bar = max.flag.value;
+	distance.to.parallel.bars = max.flag.value;
+	distance.to.trampoline = max.flag.value;
+	distance.to.tetherball.pole = max.flag.value;
+
+	if (has( i.somersault.bar) && toy.in.hand != somersault.bar)
+		{
+		distance( ego, a.somersault.bar, distance.to.somersault.bar);
+		}
+
+	if (has( i.parallel.bars) && toy.in.hand != parallel.bars)
+		{
+		distance( ego, a.parallel.bars, distance.to.parallel.bars);
+		}
+
+	if (has( i.trampoline) && toy.in.hand != trampoline)
+		{
+		distance( ego, a.trampoline, distance.to.trampoline);
+		}
+
+	if (has( i.tetherball.pole) && toy.in.hand != tetherball.pole)
+		{
+		distance( ego, a.tetherball.pole, distance.to.tetherball.pole);
+		}
+
+	if  (distance.to.somersault.bar < distance.to.parallel.bars &&
+		distance.to.somersault.bar < distance.to.trampoline &&
+		distance.to.somersault.bar < distance.to.tetherball.pole)
+		{
+		closest.toy = somersault.bar;
+		}
+	else
+		{
+		if  (distance.to.parallel.bars < distance.to.somersault.bar &&
+			distance.to.parallel.bars < distance.to.trampoline &&
+			distance.to.parallel.bars < distance.to.tetherball.pole)
+			{
+			closest.toy = parallel.bars;
+			}
+		else
+			{
+			if  (distance.to.trampoline < distance.to.somersault.bar &&
+				distance.to.trampoline < distance.to.parallel.bars &&
+				distance.to.trampoline < distance.to.tetherball.pole)
+				{
+				closest.toy = trampoline;
+				}
+			else
+				{
+				if  (distance.to.tetherball.pole < distance.to.somersault.bar &&
+					distance.to.tetherball.pole < distance.to.parallel.bars &&
+					distance.to.tetherball.pole < distance.to.trampoline)
+					{
+					closest.toy = tetherball.pole;
+					}
+				}
+			}
+		}
+	}
+
+			
+[*****
+:use.it
+[*****
+
+if (current.status != walking)
+	{
+	reset( useit);
+	}
+
+
+if (useit)
+	{
+	reset( useit);
+	}
+else
+	{
+	goto do.it;
+	}
+
+
+if (toy.in.hand)
+	{
+	if ((posn( ego,  8, 139, 38, 150) ||
+		posn( ego, 113, 139, 144, 150)))
+		{
+		print( 18);
+		}
+	else
+		{
+		if (toy.in.hand == somersault.bar)
+			{
+			toy.in.hand = 0;
+			position.f( a.somersault.bar, ego.x, ego.y);
+			draw( a.somersault.bar);
+			get.posn( a.somersault.bar, somersault.bar.x, somersault.bar.y);
+			}
+	
+		if (toy.in.hand == parallel.bars)
+			{
+			toy.in.hand = 0;
+			position.f( a.parallel.bars, ego.x, ego.y);
+			draw( a.parallel.bars);
+			get.posn( a.parallel.bars, parallel.bars.x, parallel.bars.y);
+			}
+	
+		if (toy.in.hand == trampoline)
+			{
+			toy.in.hand = 0;
+			position.f( a.trampoline, ego.x, ego.y);
+			draw( a.trampoline);
+			get.posn( a.trampoline, trampoline.x, trampoline.y);
+			}
+	
+		if (toy.in.hand == tetherball.pole)
+			{
+			toy.in.hand = 0;
+			x = ego.x;
+			y = ego.y;
+			:check.wise;
+			if ((y == somersault.bar.y ||
+				y == parallel.bars.y  ||
+				y == trampoline.y))
+				{
+				if ((distance.to.somersault.bar < 25 ||
+					distance.to.parallel.bars  < 25 ||
+					distance.to.trampoline	  < 25))
+					{
+					++y;
+					goto check.wise;
+					}
+				}
+			position.f( a.tetherball.pole, x, y);
+			draw( a.tetherball.pole);
+			get.posn( a.tetherball.pole, tetherball.pole.x, tetherball.pole.y);
+			}
+		}
+	}
+else
+	{
+	if (has( i.somersault.bar))
+		{
+		if (distance.to.somersault.bar < close.enough &&
+			closest.toy == somersault.bar)
+			{
+			toy.in.hand = somersault.bar;
+			erase( a.somersault.bar);
+			somersault.bar.x = 0;
+			somersault.bar.y = 0;
+			}
+		}
+
+	if (!toy.in.hand &&	[	toy.in.hand prevents picking up multiple objects
+		has( i.parallel.bars)) 
+		{
+		if (distance.to.parallel.bars < close.enough &&
+			closest.toy == parallel.bars)
+			{
+			toy.in.hand = parallel.bars;
+			erase( a.parallel.bars);
+			parallel.bars.x = 0;
+			parallel.bars.y = 0;
+			}
+		}
+
+	if (!toy.in.hand && has( i.trampoline))
+		{
+		if (distance.to.trampoline < close.enough &&
+			closest.toy == trampoline)
+			{
+			toy.in.hand = trampoline;
+			erase( a.trampoline);
+			trampoline.x = 0;
+			trampoline.y = 0;
+			}
+		}
+
+	if (!toy.in.hand && has( i.tetherball.pole))
+		{
+		if (distance.to.tetherball.pole < close.enough &&
+			closest.toy == tetherball.pole)
+			{
+			toy.in.hand = tetherball.pole;
+			erase( a.tetherball.pole);
+			tetherball.pole.x = 0;
+			tetherball.pole.y = 0;
+			}
+		}
+
+	}
+
+
+[*****
+:do.it
+[*****
+
+if ((toy.in.hand || current.status == jumping))
+	{
+	reset( doit);	    				[	Don't doit if your toy's in
+	}							[		your hand, Donald!!
+
+if (doit)
+	{
+	reset( doit);
+	}
+else
+	{
+	goto no.input;
+	}
+
+if (current.status == on.monkey.rope)
+	{
+	current.status = jumping;
+	set.view( ego, v.ego.pg.jumping);
+	work = 4;
+	step.size( ego, work);
+	y = 147;
+	set( keep.cycling);
+	step = 0;
+	move.obj.f( ego, ego.x, y, step, ego.hit.ground);
+	stop.sound( );
+	reset( music.done);
+	sound( s.ego.jumping, music.done);
+	}
+else
+	{
+	if (current.status == playing.on.toy)
+		{
+		current.status = walking;
+		release.priority( ego);
+		ignore.blocks( ego);
+		observe.objs( ego);
+		observe.horizon( ego);
+		set.view( ego, v.ego.pg);
+		work = 1;
+		cycle.time( ego, work);
+		start.motion( ego);
+		x = old.ego.x;
+		y = old.ego.y;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		toy.to.draw = toy.playing.on;
+		toy.playing.on = 0;
+		player.control( );
+		reset( keep.cycling);
+		}
+	else
+		{
+		if (has( i.somersault.bar))
+			{
+			if  (distance.to.somersault.bar < close.enough &&
+				closest.toy == somersault.bar && 
+				toy.in.hand != somersault.bar)
+				{
+				toy.playing.on = somersault.bar;
+				erase( a.somersault.bar);
+				old.ego.x = ego.x;
+				old.ego.y = ego.y;
+				x = somersault.bar.x;
+				y = somersault.bar.y;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				set.view( ego, v.ego.pg.somersault.bar);
+				work = 2;
+				cycle.time( ego, work);
+				stop.motion( ego);
+				}
+			}
+	
+		if (!toy.playing.on && has( i.parallel.bars))
+			{
+			if  (distance.to.parallel.bars < close.enough &&
+				closest.toy == parallel.bars && 
+				toy.in.hand != parallel.bars)
+				{
+				toy.playing.on = parallel.bars;
+				erase( a.parallel.bars);
+				old.ego.x = ego.x;
+				old.ego.y = ego.y;
+				x = parallel.bars.x;
+				y = parallel.bars.y;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				set.view( ego, v.ego.pg.parallel.bars);
+				work = 2;
+				cycle.time( ego, work);
+				stop.motion( ego);
+				}
+			}
+	
+		if (!toy.playing.on && has( i.trampoline))
+			{
+			if  (distance.to.trampoline < close.enough &&
+				closest.toy == trampoline && 
+				toy.in.hand != trampoline)
+				{
+				toy.playing.on = trampoline;
+				erase( a.trampoline);
+				old.ego.x = ego.x;
+				old.ego.y = ego.y;
+				x = trampoline.x;
+				y = trampoline.y;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				set.view( ego, v.ego.pg.trampoline);
+				work = 2;
+				cycle.time( ego, work);
+				stop.motion( ego);
+				}
+			}
+	
+		if (!toy.playing.on && has( i.tetherball.pole))
+			{
+			if  (distance.to.tetherball.pole < close.enough &&
+				closest.toy == tetherball.pole && 
+				toy.in.hand != tetherball.pole)
+				{
+				toy.playing.on = tetherball.pole;
+				erase( a.tetherball.pole);
+				old.ego.x = tetherball.pole.x;
+				old.ego.y = tetherball.pole.y;
+				old.ego.x += 11;	[	Now ego won't move back!
+				--old.ego.y;
+				x = tetherball.pole.x;
+				x -= 6;			[	view with ego is wider
+				y = tetherball.pole.y;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				set.view( ego, v.ego.pg.tetherball.pole);
+				work = 2;
+				cycle.time( ego, work);
+				stop.motion( ego);
+				}
+			}
+	
+		if (toy.playing.on)
+			{
+			current.status = playing.on.toy;
+			set( keep.cycling);
+			}
+		}
+	}
+	
+	
+[*****
+:no.input
+[*****
+
+if (hit.special && current.status == climbing)
+	{
+	if   (has( i.rope) &&
+		(posn( ego, 129, 82, 134, 92) ||
+		 posn( ego, 23, 84, 29, 92)))		[	top of ladders
+		{
+		current.status = on.monkey.rope;
+		set.view( ego, v.ego.pg.rope);
+		work = 2;
+		step.size( ego, work);
+		x = 0;
+		y = 89;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	else
+		{
+		if ((posn( ego, 23, 141, 28, 146) ||
+			posn( ego, 129, 141, 134, 145))) [	bottom of ladders
+			{
+			current.status = walking;
+			ignore.blocks( ego);
+			observe.objs( ego);
+			observe.horizon( ego);
+			release.priority( ego);
+			set.view( ego, v.ego.pg);
+			work = 1;
+			step.size( ego, work);
+			x = 0;
+			y = 6;
+			reposition( ego, x, y);
+			}
+		}
+	}
+
+
+if (ego.hit.ground)
+	{
+	reset( ego.hit.ground);
+	toy.playing.on = 0;
+	set.view( ego, v.ego.pg);
+	work = 1;
+	step.size( ego, work);
+	current.status = walking;
+	ignore.blocks( ego);
+	release.priority( ego);
+	observe.objs( ego);
+	observe.horizon( ego);
+	reset( keep.cycling);
+	stop.sound( );
+	set( music.done);
+	}
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.playground, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (edge.ego.hit == bottom)
+	{
+	if (toy.in.hand)
+		{
+		edge.ego.hit = 0;
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 16);
+			message.timer = 44;
+			}
+		}
+	else
+		{
+		ignore.block( ego);
+		reset( no.script);
+		new.room( rm.pg.central);
+		}
+	}

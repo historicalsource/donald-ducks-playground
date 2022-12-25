@@ -1,0 +1,9 @@
+[messages for room 42 -- mickey.change.logics
+
+%message	27	"Rope        " 		[	Mickey's store
+%message	28	"Trapeze     "
+%message	29	"Ship's Wheel"
+%message	30	"Trampoline  "
+%message	31	"Catwalk     "
+%message	32	"Somersault  "
+

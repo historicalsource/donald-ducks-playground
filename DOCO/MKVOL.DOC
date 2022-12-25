@@ -1,0 +1,37 @@
+
+
+
+				   TO MAKE A DIRECT I/O GAME DISK
+				   ==============================
+
+
+There are two ways, do everything all at once, or each step at a time.
+
+
+ALL AT ONCE:
+Run "newdisks" batch file on a two drive system.
+
+
+ONE STEP AT A TIME:
+Format two disks.
+
+Run "mv 0" "mv 1" and "mv 2".  These programs read the files "drv0", "drv1",
+"drv2" to find out what goes onto each disk, then create the files
+"vol0", "vol1", and "vol2", which hold the actual game disks contents.
+
+Run "xfer" for disk 1 only.  This moves down the bootstrap sectors,
+"kq.exe", and "load" (which loads "kq.exe" when game is booted.
+
+Run "wrtit" for disk 1 only.  This moves down "words.tok," and "*.ovl".
+
+Run "wrtvol0" and "wrtvol1" batch files to move "vol0" and "vol1"
+down to make disk 1.
+
+Run "wrtvol0" and "wrtvol2" batch files to move "vol0" and "vol2"
+down to make disk 2.
+
+Run "wrtdirs" to move the directories to disk 1 only.
+
+
+
+

@@ -1,0 +1,132 @@
+[logics for room 37 -- paid.money.logics
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+[Main room logic sets "money.to.fix" & "add.dollars."  This dynamic catches 
+[them, recomputes earnings, and sets "update.window."  Main room catches
+["update.window" and sets "paid.money.x & y."  This logic catches them, and
+[prints the result.
+
+
+if (init.log)
+	{
+	}
+	  
+
+if (money.to.fix == paid.money)
+	{
+
+	if ((add.dollars || add.cents))
+		{
+		paid.cents += add.cents;
+		paid.dollars += add.dollars;
+		}
+	else
+		{
+		if ((sub.dollars || sub.cents))
+			{
+	
+			:do.sub.cents
+			if (paid.cents < sub.cents)
+				{
+				if (!paid.ten.cents)
+					{
+					if (!paid.dollars)
+						{
+						--paid.ten.dollars;
+						paid.dollars += 10;
+						}
+					--paid.dollars;
+					paid.ten.cents += 10;
+					}
+				paid.cents += 10;
+				--paid.ten.cents;
+				goto do.sub.cents;
+				}
+			paid.cents -= sub.cents;
+	
+			:do.sub.dollars
+			if (paid.dollars < sub.dollars)
+				{
+				--paid.ten.dollars;
+				paid.dollars += 10;
+				}
+			paid.dollars -= sub.dollars;
+			}
+		}
+	
+	update.window = money.to.fix;
+	money.to.fix = 0;
+	add.dollars = 0;
+	add.cents = 0;
+	sub.dollars = 0;
+	sub.cents = 0;
+
+	:do.add.cents
+	if (paid.cents > 9)
+		{
+		paid.cents -= 10;
+		++paid.ten.cents;
+		goto do.add.cents;
+		}
+	
+	:do.add.ten.cents
+	if (paid.ten.cents > 9)
+		{
+		paid.ten.cents -= 10;
+		++paid.dollars;
+		goto do.add.ten.cents;
+		}
+	
+	:do.add.dollars
+	if (paid.dollars > 9)
+		{
+		++paid.ten.dollars;
+		paid.dollars -= 10;
+		goto do.add.dollars;
+		}
+	}
+
+
+if (paid.money.y)					[	Display what he's paid so far.
+	{
+	message = dollar;
+	display.f( paid.money.y, paid.money.x, message);
+
+	++paid.money.x;
+	if (paid.ten.dollars)
+		{
+		++paid.ten.dollars;
+		display.f( paid.money.y, paid.money.x, paid.ten.dollars);
+		--paid.ten.dollars;
+		}
+	else
+		{
+		message = space;
+		display.f( paid.money.y, paid.money.x, message);
+		}
+
+	++paid.money.x;
+	++paid.dollars;
+	display.f( paid.money.y, paid.money.x, paid.dollars);
+	--paid.dollars;
+
+	++paid.money.x;
+	message = period;
+	display.f( paid.money.y, paid.money.x, message);
+
+	++paid.money.x;
+	++paid.ten.cents;
+	display.f( paid.money.y, paid.money.x, paid.ten.cents);
+	--paid.ten.cents;
+
+	++paid.money.x;
+	++paid.cents;
+	display.f( paid.money.y, paid.money.x, paid.cents);
+	--paid.cents;
+
+	paid.money.x = 0;
+	paid.money.y = 0;
+	}

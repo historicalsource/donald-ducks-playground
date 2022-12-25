@@ -1,0 +1,13 @@
+[messages for room 21 -- rm.train.job
+
+%message	21	"Duck Corners "
+%message	22	"Ducks Landing"
+%message	23	"Ducktropolis "
+%message	24	"Duck Valley  "
+%message	25	"Duckburg     "
+%message	26	"Duck City    "
+%message	27	"Duckville    "
+%message	28	"Ducktown     "
+%message	31	"Pick up at "
+%message	32	"Deliver to "
+

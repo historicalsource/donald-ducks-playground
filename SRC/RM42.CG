@@ -1,0 +1,256 @@
+[logics for room 42 -- mickey.change.logics
+
+%include "gamedefs"
+%include "rm42.msg"
+
+
+[Prints cost of all objects bought in previous.room on bottom 2-lines of 
+[text window.
+
+
+if (init.log)
+	{
+	}
+
+
+if ((update.window == update.all || update.window == update.cost))
+	{
+	update.window = 0;
+
+	x = 0;
+	y = 23;
+	set.text.attribute( 15, 0);
+
+
+	if (owes.for.toy.1)
+		{
+		message = rope;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.1.dollars;
+		display.f( y, x, cost.1.dollars);
+		--cost.1.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.1.ten.cents;
+		display.f( y, x, cost.1.ten.cents);
+		--cost.1.ten.cents;
+
+		++x;
+		++cost.1.cents;
+		display.f( y, x, cost.1.cents);
+		--cost.1.cents;
+
+		x += 8;					[	+13, \-5 for the ++x's above
+		y = 23;
+		}
+
+
+	if (owes.for.toy.2)
+		{
+		message = trapeze;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.2.dollars;
+		display.f( y, x, cost.2.dollars);
+		--cost.2.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.2.ten.cents;
+		display.f( y, x, cost.2.ten.cents);
+		--cost.2.ten.cents;
+
+		++x;
+		++cost.2.cents;
+		display.f( y, x, cost.2.cents);
+		--cost.2.cents;
+
+		x += 8;					[	+13, \-5 for the ++x's above
+		y = 23;
+		}
+
+
+	if (owes.for.toy.3)
+		{
+		message = ships.wheel;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.3.dollars;
+		display.f( y, x, cost.3.dollars);
+		--cost.3.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.3.ten.cents;
+		display.f( y, x, cost.3.ten.cents);
+		--cost.3.ten.cents;
+
+		++x;
+		++cost.3.cents;
+		display.f( y, x, cost.3.cents);
+		--cost.3.cents;
+
+		x += 8;					[	+13, \-5 for the ++x's above
+		y = 23;
+		}
+
+
+	if (owes.for.toy.4)
+		{
+		message = trampoline;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.4.dollars;
+		display.f( y, x, cost.4.dollars);
+		--cost.4.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.4.ten.cents;
+		display.f( y, x, cost.4.ten.cents);
+		--cost.4.ten.cents;
+
+		++x;
+		++cost.4.cents;
+		display.f( y, x, cost.4.cents);
+		--cost.4.cents;
+
+		x += 8;					[	+13, \-5 for the ++x's above
+		y = 23;
+		}
+
+
+	if (owes.for.toy.5)
+		{
+		message = catwalk;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.5.dollars;
+		display.f( y, x, cost.5.dollars);
+		--cost.5.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.5.ten.cents;
+		display.f( y, x, cost.5.ten.cents);
+		--cost.5.ten.cents;
+
+		++x;
+		++cost.5.cents;
+		display.f( y, x, cost.5.cents);
+		--cost.5.cents;
+
+		x += 8;					[	+13, \-5 for the ++x's above
+		y = 23;
+		}
+
+
+	if (owes.for.toy.6)
+		{
+		message = somersault.bar;
+		display.f( y, x, message);
+
+		y = 24;
+		message = dollar;			[	"$"
+		display.f( y, x, message);
+
+		++x;
+		++x;
+		++cost.6.dollars;
+		display.f( y, x, cost.6.dollars);
+		--cost.6.dollars;
+
+		++x;
+		message = period;
+		display.f( y, x, message);
+
+		++x;
+		++cost.6.ten.cents;
+		display.f( y, x, cost.6.ten.cents);
+		--cost.6.ten.cents;
+
+		++x;
+		++cost.6.cents;
+		display.f( y, x, cost.6.cents);
+		--cost.6.cents;
+		}
+
+	}							[	END update.window
+
+
+if (changed.mind)
+	{
+	reset( changed.mind);
+
+	if (owes.for.toy.1)
+		{
+		drop( i.rope);
+		}
+	if (owes.for.toy.2)
+		{
+		drop( i.trapeze);
+		}
+	if (owes.for.toy.3)
+		{
+		drop( i.ships.wheel);
+		}
+	if (owes.for.toy.4)
+		{
+		drop( i.trampoline);
+		}
+	if (owes.for.toy.5)
+		{
+		drop( i.catwalk);
+		}
+	if (owes.for.toy.6)
+		{
+		drop( i.somersault.bar);
+		}
+	}

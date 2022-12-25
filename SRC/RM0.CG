@@ -1,0 +1,372 @@
+[logics for room 0 -- executed before room logics
+
+%include "rm0.msg"
+%include "gamedefs"
+
+
+if (error.number)
+	{
+	call( error.logics);
+	}
+
+if (!current.room)
+	{
+	if (!restart.in.progress)
+		{
+		script.size( 144);
+
+		set.menu(      22);						[	"Sierra"
+		set.menu.item( 23, cAbout);				[	"About"
+		set.menu.item( 24, c.help);				[	"Help"
+
+		set.menu(      26);						[	"File
+		set.menu.item( 27, c.restart);			[	"Restart"
+		set.menu.item( 28, cDummy);				[	"--------
+		set.menu.item( 29, c.quit);				[	"Quit"
+
+		set.menu(      31);						[	"Action
+		set.menu.item( 32, c.doit);				[	"Do Something
+		set.menu.item( 33, cGoToMainStreet);		[	"To Main Street
+		set.menu.item( 34, c.useit);				[	"Use Something
+
+		set.menu(      35);						[	"Special
+		set.menu.item( 36, c.sound.toggle);		[	"Sound"
+		if  (machine.type == PC &&
+			monitor.type != mono &&
+			monitor.type != ega)
+			{
+			set.menu.item( 37, c.toggle.monitor);	[	"RGB Monitor
+			}
+
+		if (machine.type != PC)
+			{
+			set.menu.item( 40, c.init.joy); 		[	"Joystick/Mouse
+			}
+		else
+			{
+			set.menu.item( 38, c.init.joy); 		[	"Joystick"
+			}
+
+		set.menu.item( 39, c.pause);				[	"Pause"
+
+		submit.menu();
+		}
+
+
+	call( startup.logics);
+	
+	if (test.room)
+		{
+		new.room.v( test.room);
+		}
+
+	if (restart.in.progress)
+		{
+		new.room( rm.pick.a.level);
+		}
+
+	new.room( rm.title);		[	real starting room
+	}
+
+
+if (init.log)
+	{
+	if (!force.a.test)
+		{
+		reset( debugging);
+		reset( enable.trace);
+		}
+
+	clear.lines( 21, 24, 0);
+
+	if (demo)
+		{
+		prevent.input( );
+		}
+
+	player.control( );				[	Return ego to normal.
+	reset( keep.cycling);
+	reset( no.cycling);
+	reset( out.of.memory);
+	reset( enable.double.click);
+
+	wait.1 = 0;					[	no global clocks
+	wait.2 = 0;
+	timer.1 = 0;
+	timer.2 = 0;
+	seconds.in.room = 0;
+	old.seconds.in.room = 0;
+
+	reset( doit);					[	controller stuff
+	reset( useit);
+	reset( have.match);
+
+	work = 30;
+	:loop1;
+	if (work < 90)
+		{
+		reset.v( work);
+		work @= 0;
+		++work;
+		goto loop1;
+		}
+
+	if (current.room > rm.menu.east)		
+		{
+		enable.item( cGoToMainStreet);
+		}
+	else
+		{
+		disable.item( cGoToMainStreet);
+		}
+
+	if (debugging)
+		{
+		load.logics( debug.logics);
+		load.logics( lgc.trace);
+		set( enable.trace);
+		accept.input( );
+		}
+	else
+		{
+		prevent.input( );
+		}
+
+	animate.obj( ego);
+	load.view( v.ego);
+	load.view.v( current.ego);
+	set.view.v( ego, current.ego);
+	}							[	end init.logs
+
+
+get.posn( ego, ego.x, ego.y);
+
+if (old.seconds.in.room != elapsed.seconds)
+	{
+	old.seconds.in.room = elapsed.seconds;
+	++seconds.in.room;
+	}
+
+
+[*****
+[	CONTROLLER STUFF
+[*****
+
+reset( doit);
+reset( useit);
+reset( have.match);
+
+if (controller( cMenu))				{menu.input();}
+if (controller( c.doit))				{set( doit);}
+if (controller( c.useit))  			{set( useit);}
+if (controller( c.restart))			{restart.game( );}
+if (controller( c.pause))  			{pause( );}
+if (controller( c.init.joy))			{init.joy( );}
+
+
+if (demo)
+	{
+	if ((have.key() || doit || useit))
+		{
+		reset( demo);
+		new.room( rm.pick.a.level);
+		}
+	}
+
+if (controller( cAbout))
+	{
+	if (elapsed.days)
+		{
+		print( 44);
+		}
+	else
+		{
+		if (elapsed.hours)
+			{
+			print( 45);
+			}
+		else
+			{
+			print( 46);
+			}
+		}
+	}
+
+if ((controller( c.quit) ||
+	said( quit)))
+	{
+	stop.sound();
+	if (debugging)
+		{
+		quit( 1);
+		}
+	else
+		{
+		quit( 0);
+		}
+	}
+
+if (machine.type == TANDY)
+	{
+	if (attenuation < 15 &&
+	    controller( cDecrescendo))		{++attenuation;}
+	if (controller( cCrescendo))			{--attenuation;}
+	}
+
+if (controller( c.toggle.monitor))
+	{
+	if  (current.room < 21 && 
+		current.room != 14)
+		{
+		toggle.monitor( );
+		}
+	else
+		{
+		print( 21);
+		}
+	}
+
+if  (controller( cGoToMainStreet) &&
+	current.room > rm.menu.east)		
+	{
+	if  (current.room > 10 && 		[	Stores and change-making.
+		current.room < 15)
+		{
+		set( changed.mind);			[	Let the rooms deal with this!
+		}
+	else
+		{
+		set( going.to.menu);
+		reset( no.script);
+		if (current.room > 20)
+			{
+			new.room( rm.menu.east);
+			}
+		else
+			{
+			new.room( rm.menu.west);
+			}
+		}
+	}
+
+if (controller( c.sound.toggle))
+	{
+	stop.sound( );
+	toggle( sound.on);
+	if (sound.on)
+		{
+		print( 19);
+		}
+	else
+		{
+		print( 18);
+		}
+	}
+
+if (controller( c.version))
+	{
+	print( 16);
+	version( );
+	}
+
+if (controller( c.debug))
+	{
+	if (debugging)
+		{
+		reset( debugging);
+		}
+	else
+		{
+		set( debugging);
+		load.logics( debug.logics);
+		load.logics( lgc.trace);
+		set( enable.trace);
+		print( 16);
+		version( );
+		accept.input( );
+		}
+	}
+
+if (controller( c.help))
+	{
+[		if (out.of.memory)
+[			{
+[			print( 17);
+[			}
+[		else
+[			{
+			call( help.logics);
+[			}
+	}
+
+
+[*****
+[	EGO CYCLING
+[*****
+
+if (ego.dir == old.ego.dir &&
+	ego.x == old.ego.x &&
+	ego.y == old.ego.y)
+	{
+	stop.cycling( ego);
+	}
+else
+	{
+	start.cycling( ego);
+	}
+
+if ((!ego.dir || no.cycling))
+	{
+	stop.cycling( ego);
+	}
+
+if (keep.cycling) 					[	. . . to make him cycle anyhow!
+	{
+	start.cycling( ego);
+	}
+
+
+
+[*****
+[	SPEED STUFF
+[*****
+
+if (animation.interval != speed)
+	{
+	animation.interval = speed;
+
+	if (speed == slow)
+		{
+		changing.minutes.speed = 7;
+		}
+
+	if (speed == normal)
+		{
+		changing.minutes.speed = 9;
+		}
+
+	if (speed == halffast)
+		{
+		changing.minutes.speed = 14;
+		}
+
+	if (speed == fast)
+		{
+		changing.minutes.speed = 27;
+		}
+	}
+
+
+[*****
+:exit
+[*****
+
+call.f( current.room);
+if (debugging)
+	{
+	call( debug.logics);
+	}
+
+get.posn( ego, old.ego.x, old.ego.y);
+old.ego.dir = ego.dir;
+

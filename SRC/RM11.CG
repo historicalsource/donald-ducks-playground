@@ -1,0 +1,743 @@
+[logics for room 11 -- rm.goofy.store
+
+%include "rm11.msg"
+%include "gamedefs"
+
+
+%define	max.toys.per.trip			lcl0
+%define	toys.in.hand				lcl2
+
+%define	seen.message				lf0
+%define	add.some.dollars			lf1
+%define	sub.some.dollars			lf2
+%define	goto.change.room			lf3
+%define	could.buy.ladder			lf4
+%define	could.buy.tire				lf5
+%define	could.buy.old.box			lf6
+%define	could.buy.slide			lf7
+%define	could.buy.firemans.pole		lf8
+%define	could.buy.pulley			lf9
+
+%define	pressed.button				tf9
+
+
+								[ view#	size	alloc
+								[===================
+%object	a.ladder			obj.4  	[	121 	 396	 400	
+%object	a.tire			obj.6  	[	123 	 522	 600	
+%object	a.old.box			obj.1  	[	124 	  94	 100	
+%object	a.slide			obj.9 	[	109	 816  900
+%object	a.firemans.pole	obj.5  	[	107	 448  500	
+%object	a.pulley			obj.400.1	[	106	 268	 400	
+%object	a.clerk			obj.7	[	100	 424	 700
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+	toys.in.hand = 0;
+
+	reset( owes.for.toy.1);
+	reset( owes.for.toy.2);
+	reset( owes.for.toy.3);
+	reset( owes.for.toy.4);
+	reset( owes.for.toy.5);
+	reset( owes.for.toy.6);
+
+	load.view( v.ego);
+	set.view( ego, v.ego);
+
+	load.logics( store.logics);
+	load.logics( dons.money.logics);
+	load.logics( owes.money.logics);
+
+	if (!has( i.ladder))
+		{
+		set( could.buy.ladder);
+		load.view( v.pg.ladder);
+		}
+
+	if (!has( i.pulley))
+		{
+		set( could.buy.pulley);
+		load.view( v.store.rope.and.pulley);
+		}
+
+	if (!has( i.tire))
+		{
+		set( could.buy.tire);
+		load.view( v.pg.tire);
+		}
+
+	if (!has( i.old.box))
+		{
+		set( could.buy.old.box);
+		load.view( v.pg.old.box);
+		}
+
+	if (!has( i.slide))
+		{
+		set( could.buy.slide);
+		load.view( v.store.slide);
+		}
+
+	if (!has( i.firemans.pole))
+		{
+		set( could.buy.firemans.pole);
+		load.view( v.store.firemans.pole);
+		}
+
+	load.view( v.goofy.store);
+	load.sound( s.wrong);
+	load.sound( s.ok);
+	load.sound( m.store);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	animate.obj( a.clerk);			[	cashier
+	position( a.clerk, 72, 159);
+	set.view( a.clerk, v.goofy.store);
+	draw( a.clerk);
+
+
+	if (could.buy.ladder)
+		{
+		animate.obj( a.ladder);		[	upper left
+		position( a.ladder, 49, 74);
+		set.view( a.ladder, v.pg.ladder);
+		draw( a.ladder);
+		}
+
+	if (could.buy.pulley)
+		{
+		animate.obj( a.pulley);		[	Upper center
+		position( a.pulley, 74, 65);
+		set.view( a.pulley, v.store.rope.and.pulley);
+		draw( a.pulley);
+		}
+
+	if (could.buy.tire)
+		{
+		animate.obj( a.tire); 		[	Upper right
+		position( a.tire, 104, 68);
+		set.view( a.tire, v.pg.tire);
+		draw( a.tire);
+		}
+
+	if (could.buy.old.box)
+		{
+		animate.obj( a.old.box);		[	middle
+		position( a.old.box, 40, 108);
+		set.view( a.old.box, v.pg.old.box);
+		draw( a.old.box);
+		}
+
+	if (could.buy.slide)
+		{
+		animate.obj( a.slide);		[	lower left
+		position( a.slide, 80, 108);
+		set.view( a.slide, v.store.slide);
+		draw( a.slide);
+		}
+
+	if (could.buy.firemans.pole)
+		{
+		animate.obj( a.firemans.pole);	[	lower right
+		position( a.firemans.pole, 113, 144);
+		set.view( a.firemans.pole, v.store.firemans.pole);
+		draw( a.firemans.pole);
+		}
+
+
+	position( ego, 145, 135);			[	Outside coming in
+	draw( ego);
+
+	if (level == beginning)			[	Handle varying costs
+		{
+		max.toys.per.trip	= 1;
+
+		cost.1.dollars		= 0;
+		cost.1.ten.cents	= 0;
+		cost.1.cents		= 5;
+
+		cost.2.dollars		= 0;
+		cost.2.ten.cents	= 2;
+		cost.2.cents		= 5;
+
+		cost.3.dollars		= 0;
+		cost.3.ten.cents	= 0;
+		cost.3.cents		= 5;
+		
+		cost.4.dollars		= 0;
+		cost.4.ten.cents	= 0;
+		cost.4.cents		= 1;
+		
+		cost.5.dollars		= 0;
+		cost.5.ten.cents	= 1;
+		cost.5.cents		= 0;
+
+		cost.6.dollars		= 0;
+		cost.6.ten.cents	= 1;
+		cost.6.cents		= 0;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			max.toys.per.trip	= 1;
+
+			cost.1.dollars		= 0;
+			cost.1.ten.cents	= 3;
+			cost.1.cents		= 0;
+
+			cost.2.dollars		= 1;
+			cost.2.ten.cents	= 1;
+			cost.2.cents		= 0;
+			
+			cost.3.dollars		= 0;
+			cost.3.ten.cents	= 2;
+			cost.3.cents		= 0;
+			
+			cost.4.dollars		= 0;
+			cost.4.ten.cents	= 1;
+			cost.4.cents		= 1;
+			
+			cost.5.dollars		= 0;
+			cost.5.ten.cents	= 5;
+			cost.5.cents		= 0;
+
+			cost.6.dollars		= 1;
+			cost.6.ten.cents	= 0;
+			cost.6.cents		= 5;
+			}
+		else
+			{
+			max.toys.per.trip	= 3;
+
+			cost.1.dollars		= 1;
+			cost.1.ten.cents	= 2;
+			cost.1.cents		= 4;
+			
+			cost.2.dollars		= 2;
+			cost.2.ten.cents	= 6;
+			cost.2.cents		= 8;
+			
+			cost.3.dollars		= 0;
+			cost.3.ten.cents	= 7;
+			cost.3.cents		= 1;
+			
+			cost.4.dollars		= 0;
+			cost.4.ten.cents	= 3;
+			cost.4.cents		= 8;
+			
+			cost.5.dollars		= 1;
+			cost.5.ten.cents	= 9;
+			cost.5.cents		= 8;
+
+			cost.6.dollars		= 2;
+			cost.6.ten.cents	= 1;
+			cost.6.cents		= 7;
+			}
+		}
+
+
+	show.pic( );
+	if  (has( i.ladder) &&
+		has( i.pulley) &&
+		has( i.tire) &&
+		has( i.old.box) &&
+		has( i.slide) &&
+		has( i.firemans.pole))
+		{
+		print( 22);
+		set( sold.out);
+		}
+	else
+		{
+		reset( sold.out);
+		}
+
+	reset( doit);
+	reset( useit);
+
+	set( next.frame);
+	call( store.logics);
+	call( dons.money.logics);
+	return( );
+
+	}							[	end room init.
+
+
+if (next.frame)
+	{
+	reset( next.frame);
+	if (could.buy.ladder && !has( i.ladder))
+		{stop.update( a.ladder);}
+	if (could.buy.pulley && !has( i.pulley))
+		{stop.update( a.pulley);}
+	if (could.buy.tire && !has( i.tire))
+		{stop.update( a.tire);}
+	if (could.buy.old.box && !has( i.old.box))
+		{stop.update( a.old.box);}
+	if (could.buy.slide && !has( i.slide))
+		{stop.update( a.slide);}
+	if (could.buy.firemans.pole && !has( i.firemans.pole))	
+		{stop.update( a.firemans.pole);}
+	}
+
+
+if (posn( ego, 45, 143, 100, screen.bottom)) [	near cashier
+	{
+	ego.location = cashier;
+	}
+else
+	{
+	if (posn( ego, 37, 76, 60, 86) && could.buy.ladder)
+		{
+		if (ego.location != ladder && !has( i.ladder))
+			{
+			set( print.cost);
+			}
+		ego.location = ladder;
+		cost.dollars = cost.1.dollars;
+		cost.ten.cents = cost.1.ten.cents;
+		cost.cents = cost.1.cents;
+		}
+	else
+		{
+		if (posn( ego, 67, 76, 87, 86) && could.buy.pulley)
+			{
+			if (ego.location != pulley && !has( i.pulley))
+				{
+				set( print.cost);
+				}
+			ego.location = pulley;
+			cost.dollars = cost.2.dollars;
+			cost.ten.cents = cost.2.ten.cents;
+			cost.cents = cost.2.cents;
+			}
+		else
+			{
+			if (posn( ego, 95, 76, 116, 86) && could.buy.tire)
+				{
+				if (ego.location != tire && !has( i.tire))
+					{
+					set( print.cost);
+					}
+				ego.location = tire;
+				cost.dollars = cost.3.dollars;
+				cost.ten.cents = cost.3.ten.cents;
+				cost.cents = cost.3.cents;
+				}
+			else
+				{
+				if (posn( ego, 30, 100, 55, 115) && could.buy.old.box)
+					{
+					if (ego.location != old.box && !has( i.old.box))
+						{
+						set( print.cost);
+						}
+					ego.location = old.box;
+					cost.dollars = cost.4.dollars;
+					cost.ten.cents = cost.4.ten.cents;
+					cost.cents = cost.4.cents;
+					}
+				else
+					{
+					if (posn( ego, 70, 100, 110, 120) && could.buy.slide)
+						{
+						if (ego.location != slide && !has( i.slide))
+							{
+							set( print.cost);
+							}
+						ego.location = slide;
+						cost.dollars = cost.5.dollars;
+						cost.ten.cents = cost.5.ten.cents;
+						cost.cents = cost.5.cents;
+						}
+					else
+						{
+						if (posn( ego, 101, 138, 125, 155) && 
+							could.buy.firemans.pole)
+							{
+							if (ego.location != firemans.pole &&
+								!has( i.firemans.pole))
+								{
+								set( print.cost);
+								}
+							ego.location = firemans.pole;
+							cost.dollars = cost.6.dollars;
+							cost.ten.cents = cost.6.ten.cents;
+							cost.cents = cost.6.cents;
+							}
+						else
+							{
+							ego.location = 0;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+if (print.cost)
+	{
+	[don't 	reset( print.cost);
+	call( store.logics);
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (!doit)
+	{
+	goto no.input;
+	}
+else
+	{
+	reset( doit);
+	set( pressed.button);
+	}
+
+
+if (ego.location == cashier)
+	{
+	set( have.match);
+	if (sold.out)
+		{
+		print( 22);
+		}
+	else
+		{
+		if (toys.in.hand)
+			{
+			set( goto.change.room);	[	Kiss Minnie goodbye!
+			goto exit;
+			}
+		else
+			{
+			sound( s.wrong, done);
+			print( 20);			[	"Pick something before you pay
+			}
+		}
+	}
+
+if (ego.location == ladder)
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.ladder) && owes.for.toy.1)
+		{
+		drop( i.ladder);
+		reset( owes.for.toy.1);
+		draw( a.ladder);
+		set( sub.some.dollars);	[	trigger code below
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24);			[	"Pay for the 1 you've got first
+			}
+		else
+			{
+			get( i.ladder);
+			set( owes.for.toy.1);
+			start.update( a.ladder);
+			erase( a.ladder);
+			set( add.some.dollars);
+			}
+		}
+	}
+
+if (ego.location == pulley) 			[	near pulley
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.pulley) && owes.for.toy.2)
+		{
+		drop( i.pulley);
+		reset( owes.for.toy.2);
+		draw( a.pulley);
+		set( sub.some.dollars);
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24);			[	"Pay for the 1 you've got first
+			}
+		else
+			{
+			get( i.pulley);
+			set( owes.for.toy.2);
+			start.update( a.pulley);
+			erase( a.pulley);
+			set( add.some.dollars);
+			}
+		}
+	}
+
+if (ego.location == tire) 			[	near horse
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.tire) && owes.for.toy.3)
+		{
+		drop( i.tire);
+		reset( owes.for.toy.3);
+		draw( a.tire);
+		set( sub.some.dollars);		[	trigger code below
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24);			[	"Pay for what you've got 
+			}
+		else
+			{
+			get( i.tire);
+			set( owes.for.toy.3);
+			start.update( a.tire);
+			erase( a.tire);
+			set( add.some.dollars);	[	trigger code below
+			}
+		}
+	}
+
+if (ego.location == old.box)			[	near the old.box
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.old.box) && owes.for.toy.4)
+		{
+		drop( i.old.box);
+		reset( owes.for.toy.4);
+		draw( a.old.box);
+		set( sub.some.dollars);
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24);			[	"Pay first
+			}
+		else
+			{
+			get( i.old.box);
+			set( owes.for.toy.4);
+			start.update( a.old.box);
+			erase( a.old.box);
+			set( add.some.dollars);	[	trigger code below
+			}
+		}
+	}
+
+if (ego.location == slide)
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.slide) && owes.for.toy.5)
+		{
+		drop( i.slide);
+		reset( owes.for.toy.5);
+		draw( a.slide);
+		set( sub.some.dollars);
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24); 			[	"Pay first
+			}
+		else
+			{
+			get( i.slide);
+			set( owes.for.toy.5);
+			start.update( a.slide);
+			erase( a.slide);
+			set( add.some.dollars);
+			}
+		}
+	}
+
+if (ego.location == firemans.pole)
+	{
+	set( have.match);
+	set( next.frame);
+	if (has( i.firemans.pole) && owes.for.toy.6)
+		{
+		drop( i.firemans.pole);
+		reset( owes.for.toy.6);
+		draw( a.firemans.pole);
+		set( sub.some.dollars);
+		}
+	else
+		{
+		if (toys.in.hand == max.toys.per.trip)
+			{
+			sound( s.wrong, done);
+			print( 24); 			[	"Pay first
+			}
+		else
+			{
+			get( i.firemans.pole);
+			set( owes.for.toy.6);
+			start.update( a.firemans.pole);
+			erase( a.firemans.pole);
+			set( add.some.dollars);
+			}
+		}
+	}
+
+
+if (!have.match)
+	{
+	sound( s.wrong, done);
+	if (toys.in.hand)
+		{
+		print( 25); 				[	"Pay Minnie
+		}
+	else
+		{
+		if (sold.out)
+			{
+			print( 22);
+			}
+		else
+			{
+			print( 21); 				[	"Get closer sweet lips!
+			}
+		}
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (sub.some.dollars)
+	{
+	reset( sub.some.dollars);
+	money.to.fix = owes.money;
+	sub.dollars = cost.dollars;
+	sub.cents = cost.cents;
+	:loop1
+	if (cost.ten.cents)
+		{
+		sub.cents	+= 10;
+		--cost.ten.cents;
+		goto loop1;
+		}
+	--toys.in.hand;
+	sound( s.ok, done);
+	call( owes.money.logics);
+	}
+
+
+if (add.some.dollars)
+	{
+	reset( add.some.dollars);
+	money.to.fix = owes.money;
+	add.dollars = cost.dollars;
+	add.cents = cost.cents;
+	:loop2
+	if (cost.ten.cents)
+		{
+		add.cents	+= 10;
+		--cost.ten.cents;
+		goto loop2;
+		}
+	++toys.in.hand;
+	sound( s.ok, done);
+	call( owes.money.logics);
+	}
+
+
+if (update.window == owes.money)
+	{
+	[Don't let dynamic print if triggered just by recalc-ing owes.dollars!
+	[Owes.dollars is only internal at this point.
+	update.window = 0;
+	}
+
+if (!pressed.button && seconds.in.room > 30)
+	{
+	print( 20);
+	set( pressed.button);
+	}
+
+
+[*****
+:exit							[test for leaving the room
+[*****
+
+if (goto.change.room)
+	{
+	reset( no.script);
+	new.room( rm.change);			[	goto change making screen
+	}
+
+
+--wait.1;
+if (wait.1 == 1)
+	{
+	reset( seen.message);
+	}
+
+
+if  (hit.special && 
+    !seen.message &&
+    (ego.dir == ego.up.right ||
+	ego.dir == ego.right ||
+	ego.dir == ego.down.right))
+	{
+	if (toys.in.hand)
+		{
+		if (!seen.message)
+			{
+			sound( s.wrong, done);
+			set( seen.message);
+			print( 23);   
+			wait.1 = 44;
+			}
+		}
+	else
+		{
+		reset( no.script);
+		new.room( rm.menu.west);
+		}
+	}
+
+if (edge.ego.hit == right) 			[	That bastard's shoplifting!
+	{
+	if (toys.in.hand)
+		{
+		if (!seen.message)
+			{
+			sound( s.wrong, done);
+			set( seen.message);
+			print( 23);   
+			wait.1 = 44;
+			}
+		}
+	else
+		{
+		reset( no.script);
+		new.room( rm.menu.west);
+		}
+	}
+
+call( store.logics);
+call( dons.money.logics);

@@ -1,0 +1,134 @@
+[logics for room 38 -- earned.money.logics
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+[Main room logic sets "money.to.fix" & "add.dollars."  This dynamic catches 
+[them, recomputes earnings, and sets "update.window."  Main room catches
+["update.window" and sets "earned.money.x & y."  This logic catches them, and
+[prints the result.
+
+
+if (init.log)
+	{
+	}
+
+
+if (money.to.fix == earned.money)
+	{
+
+	if ((add.dollars || add.cents))
+		{
+		earned.cents += add.cents;
+		earned.dollars += add.dollars;
+		}
+	else
+		{
+		if ((sub.dollars || sub.cents))
+			{
+	
+			:do.sub.cents
+			if (earned.cents < sub.cents)
+				{
+				if (!earned.ten.cents)
+					{
+					if (!earned.dollars)
+						{
+						--earned.ten.dollars;
+						earned.dollars += 10;
+						}
+					--earned.dollars;
+					earned.ten.cents += 10;
+					}
+				earned.cents += 10;
+				--earned.ten.cents;
+				goto do.sub.cents;
+				}
+			earned.cents -= sub.cents;
+	
+			:do.sub.dollars
+			if (earned.dollars < sub.dollars)
+				{
+				--earned.ten.dollars;
+				earned.dollars += 10;
+				}
+			earned.dollars -= sub.dollars;
+			}
+		}
+	
+	update.window = money.to.fix;
+	money.to.fix = 0;
+	add.dollars = 0;
+	add.cents = 0;
+	sub.dollars = 0;
+	sub.cents = 0;
+
+	:do.add.cents
+	if (earned.cents > 9)
+		{
+		earned.cents -= 10;
+		++earned.ten.cents;
+		goto do.add.cents;
+		}
+	
+	:do.add.ten.cents
+	if (earned.ten.cents > 9)
+		{
+		earned.ten.cents -= 10;
+		++earned.dollars;
+		goto do.add.ten.cents;
+		}
+	
+	:do.add.dollars
+	if (earned.dollars > 9)
+		{
+		++earned.ten.dollars;
+		earned.dollars -= 10;
+		goto do.add.dollars;
+		}
+	}
+
+
+if (earned.money.y)					[	Display what Don's earned so far.
+	{
+	set.text.attribute( 15, 0);
+	message = dollar;
+	display.f( earned.money.y, earned.money.x, message);
+
+	++earned.money.x;
+	if (earned.ten.dollars)
+		{
+		++earned.ten.dollars;
+		display.f( earned.money.y, earned.money.x, earned.ten.dollars);
+		--earned.ten.dollars;
+		}
+	else
+		{
+		message = space;
+		display.f( earned.money.y, earned.money.x, message);
+		}
+
+	++earned.money.x;
+	++earned.dollars;
+	display.f( earned.money.y, earned.money.x, earned.dollars);
+	--earned.dollars;
+
+	++earned.money.x;
+	message = period;
+	display.f( earned.money.y, earned.money.x, message);
+
+	++earned.money.x;
+	++earned.ten.cents;
+	display.f( earned.money.y, earned.money.x, earned.ten.cents);
+	--earned.ten.cents;
+
+
+	++earned.money.x;
+	++earned.cents;
+	display.f( earned.money.y, earned.money.x, earned.cents);
+	--earned.cents;
+
+	earned.money.x = 0;
+	earned.money.y = 0;
+	}

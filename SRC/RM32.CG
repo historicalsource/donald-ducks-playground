@@ -1,0 +1,228 @@
+[logics for room 32 -- job.logics
+
+%include "gamedefs"
+%include "rm32.msg"
+
+
+[	This dynamic just handles starting up a job, finishing up a job, and the
+[time clock.
+
+
+%define	ending.song.done		tf5
+%define	seen.message			tf7
+%define	update.time			tf8
+%define	job.song.done			tf9
+
+%define	minutes				tmp1
+%define	ten.seconds			tmp2
+%define	seconds				tmp3
+%define	my.seconds			tmp4
+
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	earned.ten.dollars = 0;
+	earned.dollars = 0;
+	earned.ten.cents = 0;
+	earned.cents = 0;
+
+	display( 21, 6, 17);				[	"How long work?
+	display( 22, 12, 18);				[	"A 2-minute shift
+	display( 24, 1, 16);				[	"Time left
+	display( 24, 20, 19);				[	"Money earned $ 0.00
+
+	debounce = changing.minutes.speed;
+	minutes = 2;
+
+	stop.update( ego);
+	set( job.song.done);
+
+	reset( doit);
+	reset( useit);
+
+	current.status = starting;
+	}
+
+
+if (current.status == waiting.to.leave)
+	{
+	goto exit;
+	}
+else
+	{
+	if (current.status == starting &&
+		seconds.in.room > 20 &&
+		!seen.message)
+		{
+		set( seen.message);
+		print( 22);
+		}
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (doit && current.status == starting)
+	{
+	reset( doit);
+	clear.lines( 21, 24, 0);	
+	current.status = ready.to.start;
+	start.update( ego);
+	stop.sound( );
+	reset( job.song.done);
+
+	display( 24, 1, 16);			[	"Time left 0:00
+	display( 24, 20, 19);			[	"Money earned $ 0.00
+	}
+
+
+[*****
+:set.up
+[*****
+
+--debounce;
+if (current.status == starting && !debounce)
+	{
+	if (ego.dir == ego.up)
+		{
+		set( update.time);
+		debounce = changing.minutes.speed;
+		if (minutes < 9)
+			{
+			++minutes;
+			}
+		}
+	else
+		{
+		if (ego.dir == ego.down)
+			{
+			set( update.time);
+			if (minutes > 1)
+				{
+				debounce = changing.minutes.speed;
+				--minutes;
+				}
+			}
+		}
+	}
+	
+
+if (update.time)					[	This updates "A _-minute shift."
+	{
+	reset( update.time);
+	y = 22;
+	x = 14;
+	set.text.attribute( 15, 0);
+	++minutes;
+	display.f( y, x, minutes);
+	--minutes;
+	}
+
+
+[*****
+:clock							[	Compute and print the time.
+[*****
+
+if (current.status == playing.game)
+	{
+	if (my.seconds != elapsed.seconds)
+		{
+		my.seconds = elapsed.seconds;
+
+		set.text.attribute( 15, 0);
+		y = 24;
+		x = 11;
+		++minutes;
+		display.f( y, x, minutes);
+		--minutes;
+		
+		++x;
+		message = colon;
+		display.f( y, x, message);
+	
+		++x;
+		++ten.seconds;
+		display.f( y, x, ten.seconds);
+		--ten.seconds;
+	
+		++x;
+		++seconds;
+		display.f( y, x, seconds);
+		--seconds;
+
+		if (seconds)
+			{
+			--seconds;
+			}
+		else
+			{
+			if (ten.seconds)
+				{
+				--ten.seconds;
+				seconds = 9;
+				}
+			else
+				{
+				if (minutes)
+					{
+					--minutes;
+					ten.seconds = 5;
+					seconds = 9;
+					}
+				else
+					{
+					current.status = times.up;
+					}
+				}
+			}
+		}
+	}		
+
+
+if (job.song.done && current.status == starting)
+	{
+	reset( job.song.done);
+	sound( m.job, job.song.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (current.status == times.up)
+	{
+	clear.lines( 21, 22, 0);
+	sound( s.game.over, ending.song.done);
+	display( 21, 0, 20);			[	"Times up!
+	current.status = waiting.to.leave;
+	}
+else
+	{
+	if (current.status == waiting.to.leave)
+		{
+		reset( keep.cycling);
+		reset( no.cycling);
+		stop.update( ego);
+	
+		if (ending.song.done)
+			{
+			display( 21, 12, 21);   		[	"Press button to leave.
+			reset( ending.song.done);
+			stop.sound( );
+			}
+
+		if ((have.key( ) || doit || useit))
+			{
+			reset( no.script);
+			new.room( rm.payroll);
+			}
+		}
+	}

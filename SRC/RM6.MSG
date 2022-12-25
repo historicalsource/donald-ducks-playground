@@ -1,0 +1,10 @@
+[messages for room 6 -- rm.menu.west
+
+
+%message	16	"
+In these stores, Donald buys toys for"
+%message	17	"
+the playground.  He spends the money"
+%message	18	"
+he earns working across the street."
+

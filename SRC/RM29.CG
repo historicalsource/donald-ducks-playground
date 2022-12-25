@@ -1,0 +1,166 @@
+[logics for room 29 -- debug logics
+
+%include "gamedefs"
+
+
+%message	20
+"Copyright 1986 by Sierra On-Line, Inc.
+  All logics written by Al Lowe."
+%message	21	"New room:"
+%message	22	"X coordinate:"
+%message	23	"Y coordinate:"
+%message	24	"Object number:"
+%message	25	"Flag number:"
+%message  26	"Variable number:"
+%message	28	"New value:"
+%message	27	"Current room = %v0"
+%message	29	"Variable %v254 = %v255"
+%message	30	"Flag %v254 IS set."
+%message	31	"Flag %v254 NOT set."
+
+
+[%var		old	debug.0		18
+[%var		old	debug.1		19
+
+[%var		debug.0					254
+[%var		debug.1					255
+
+
+if (controller( c.show.mem))
+	{
+	show.mem( );
+	}
+
+if ((said( show, priority) ||
+	controller( c.show.priority))) 
+	{
+	show.pri.screen( );
+	}
+
+if (controller( c.echo.line))
+	{
+	echo.line( );
+	}
+
+if (controller( c.cancel.line))
+	{
+	cancel.line( );
+	}
+
+if ((controller( c.quit) ||
+	said1(quit)))
+	{
+	quit( 1);
+	}
+
+if (said1(tp))
+	{
+	get.num( 21, debug.0);
+	reset( no.script);
+	new.room.f( debug.0);
+	}
+
+if ((said( show, position) || 
+	controller( c.show.ego) ||
+	said1(sp)))
+	{
+	debug.0 = 0;
+	obj.status.f( debug.0);
+	}
+
+if ((said( show, object) ||
+	said1( object)))
+	{
+	get.num( 24, debug.0);
+	obj.status.f( debug.0);
+	}
+
+if (said1(position))
+	{
+	get.num( 22, debug.0);
+	get.num( 23, debug.1);
+	erase( ego);
+	position.f( ego, debug.0, debug.1);
+	draw( ego);
+	}
+
+if (said( get, object))
+	{
+	get.num( 24, debug.0);
+	get.f( debug.0);
+	}
+
+if ((said( show, flag) || said1(sf))) 
+	{
+	get.num( 25, debug.0);
+	if (isset.v( debug.0))
+		{
+		print( 30);
+		}
+	else {
+		print( 31);
+		}
+	}
+
+if (said( set, flag))
+	{
+	get.num( 25, debug.0);
+	set.v( debug.0);
+	}
+
+if (said( reset, flag))
+	{
+	get.num( 25, debug.0);
+	reset.v( debug.0);
+	}
+
+if (said( show, var))
+     {
+     get.num( 26, debug.0);
+	debug.1 =@ debug.0;
+	print( 29);
+     }
+
+if (said( set, var))
+     {
+     get.num( 26, debug.0);
+     get.num( 28, debug.1);
+     debug.0 @= debug.1;
+     }
+
+if (said( reset, var))
+	{
+	get.num( 26, debug.0);
+	debug.0 = 0;
+	}
+
+if (said( show, room))
+	{
+	print( 27);
+	}
+
+
+if (said( fast))
+	{
+	speed = fast;
+	}
+
+if (said( halffast))
+	{
+	speed = halffast;
+	}
+
+if (said( normal))
+	{
+	speed = normal;
+	}
+
+if (said( slow))
+	{
+	speed = slow;
+	}
+
+
+[*****
+:exit
+[*****

@@ -1,0 +1,14 @@
+[messages for room 3 -- rm.pick.a.level
+
+
+%message	20	
+"When words appear here, press the Enter key or a joystick
+ button to continue."
+
+%message	21	
+"Please walk through a doorway to choose a level."
+
+%message	22	
+"When words appear here, press the RETURN key, joystick
+ button, or right mouse button to continue."
+

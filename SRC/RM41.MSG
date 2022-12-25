@@ -1,0 +1,9 @@
+[messages for room 41 -- goofy.change.logics
+
+%message	21	"Rope Ladder "			[	Goofy's store
+%message	22	"Pulley, Rope"
+%message	23	"Tire Swing  "
+%message	24	"Old Box     "
+%message	25	"Slide       "	
+%message	26	"Fireman Pole"			[	Limit of 12 characters per name.
+

@@ -1,0 +1,154 @@
+[logics for room 33 -- store logics
+
+%include "gamedefs"
+%include	"rm33.msg"
+
+
+[	This dynamic does only the following:
+[		controls the cashier's wander/stopped time (cashier must be obj.7);
+[		prints the status window ("You have $" "item.name" "Cost $");
+[		tells dons.money.logic to print his current.bankroll;
+
+
+%define	cashier.moving.time		10
+%define	cashier.still.time		50
+
+%define	old.ego.location		tmp7
+%define	cashier.timer			tmp8
+
+%define	cashier.is.wandering	tf1
+
+%object	a.clerk				obj.7
+
+
+if (init.log)
+	{
+	if (level == advanced)
+		{
+		speed = halffast;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			speed = halffast;
+			}
+		else
+			{
+			speed = normal;
+			}
+		}
+
+	ego.location = 0;
+	owes.ten.dollars = 0;
+	owes.dollars = 0;
+	owes.ten.cents = 0;
+	owes.cents = 0;
+	set.priority( a.clerk, 14);
+	cashier.timer = 2;				[	to trigger cashier's loop below
+	sound( m.store, done);
+
+	reset( doit);
+	reset( useit);
+
+	}
+
+	
+[*****
+:no.input
+[*****
+
+--cashier.timer;
+if (cashier.timer == 1)
+	{
+	if (cashier.is.wandering)
+		{
+		stop.motion( a.clerk);
+		stop.cycling( a.clerk);
+		cashier.timer = cashier.still.time;
+		}
+	else
+		{
+		start.motion( a.clerk);
+		start.cycling( a.clerk);
+		wander( a.clerk);
+		cashier.timer = cashier.moving.time;
+		}
+	toggle( cashier.is.wandering);
+	}
+
+
+if (print.cost && !old.ego.location)
+	{
+	clear.lines( 21, 24, 0);
+	dons.money.y = 23;				[	print Don's Bankroll
+	set.text.attribute( 15, 0);
+	dons.money.x = 12;
+	message = 16;					[	"You have
+	display.f( dons.money.y, dons.money.x, message);
+	dons.money.x = 21;
+	call( dons.money.logics);
+
+	update.window = update.cost;		[	Do cost also!
+	}
+
+if ((print.cost || update.window == update.cost))
+	{
+	reset( print.cost);
+	update.window = 0;
+	y = 24;						[	print cost of closest object
+	x = 0;
+	set.text.attribute( 15, 0);
+	clear.lines( 24, 24, 0);
+	display.f( y, x, ego.location);
+
+	x = 28;
+	message = 17;					[	"Cost $"
+	display.f( y, x, message);
+
+	x = 34;
+	if (cost.ten.dollars)
+		{
+		display.f( y, x, cost.ten.dollars);
+		}
+	else
+		{
+		message = space;
+		display.f( y, x, message);
+		}
+
+	++x;
+	++cost.dollars;
+	display.f( y, x, cost.dollars);
+	--cost.dollars;
+
+	++x;
+	message = period;
+	display.f( y, x, message);
+
+	++x;
+	++cost.ten.cents;
+	display.f( y, x, cost.ten.cents);
+	--cost.ten.cents;
+
+	++x;
+	++cost.cents;
+	display.f( y, x, cost.cents);
+	--cost.cents;
+
+	}
+	
+
+[*****
+:exit
+[*****
+
+if (changed.mind)
+	{
+[	call rooms 41-43 with "changed.mind" set will clear purchases
+	work = current.room;
+	work += 30;
+	call.f( work);
+	reset( no.script);
+	new.room( rm.menu.west);
+	}

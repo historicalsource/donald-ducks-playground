@@ -1,0 +1,29 @@
+[messages for room 1 -- rm.titles 	(includes pic.2, defined as rm.credits)
+
+
+
+%message	21	  "(C) 1987 by The Walt Disney Company"
+%message	22      "Adventure Game Development System"
+%message	23	   "(C) 1987 by Sierra On-Line, Inc."
+
+
+[--------------------------------------------------------------------------]
+
+
+%message	25	"Game design by:"
+%message	26	     "Al Lowe"
+%message	28		"and the Walt Disney Personal"
+%message	29	         "Computer Software Design"
+%message	30	            "and Development Staff"
+
+%message	31	"Programming by:"
+%message	32	     "Al Lowe"
+%message	33	     "Jeff Stephenson"
+%message	34	     "Chris Iden"
+
+%message	35	"Graphics by:"
+%message	36	     "Mark Crowe"
+
+%message	38	"Music composed and programmed by:"
+%message	39		"Al Lowe"
+

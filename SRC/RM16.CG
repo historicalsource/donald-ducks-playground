@@ -1,0 +1,455 @@
+[logics for room 16 -- rm.pg.west -- rocket bottom
+
+%include "rm16.msg"
+%include "gamedefs"
+
+
+%define	tunnel.time			19
+%define	close.enough			15
+
+
+%define	music.done			lf0
+%define	toy.in.hand			lcl1
+%define	ego.arrived			lf2
+%define	toy.playing.on			lcl3
+
+%define	message.timer			wait.1
+%define	tunnel.timer			timer.1
+
+
+%object	a.old.box				obj.4	[	kinda like "an" old box.
+
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	set.horizon( 47);
+	speed = halffast;
+
+	ego.location = 0;
+
+	if (force.a.test)
+		{
+		get( i.old.box);
+		get( i.spaceship.ladder);
+		}
+
+	if (has( i.old.box))
+		{
+		load.view( v.ego.pg.old.box);
+		load.view( v.pg.old.box);
+		}
+
+	if (has( i.spaceship.ladder))
+		{
+		load.view( v.pg.spaceship.ladder);
+		load.view( v.ego.pg.ladder);
+		}
+
+	if (current.status == sliding)
+		{
+		load.view( v.ego.pg.slide);
+		}
+
+	load.view( v.ego.pg);
+	load.sound( m.playground);
+	set( music.done);
+
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	if (has( i.spaceship.ladder))
+		{
+		add.to.picture( v.pg.spaceship.ladder, 0, 0, 36, 158, 14, 0);
+		}
+
+	if (has( i.old.box))
+		{
+		animate.obj( a.old.box);
+		if (!old.box.y)
+			{
+			old.box.x = 64;
+			old.box.y = 110;
+			}
+		position.f( a.old.box, old.box.x, old.box.y);
+		set.view( a.old.box, v.pg.old.box);
+		draw( a.old.box);
+		}
+
+	if (previous.room == rm.pg.west.top)
+		{
+		if (current.status == climbing)
+			{
+			player.control( );
+			set.view( ego, v.ego.pg.ladder);
+			position( ego, 36, 56);
+			set.priority( ego, 12);
+			draw( ego);
+			}
+		else
+			{
+			current.status = sliding;
+			program.control( );
+			tunnel.timer = tunnel.time;
+			set.view( ego, v.ego.pg.slide);
+			set.loop( ego, facing.right);
+			set.priority( ego, 13);
+			position( ego, 57, 46);
+			[	don't draw( ego); later, when timer expires
+			}
+		}
+	else
+		{
+		set.view( ego, v.ego.pg);
+		current.status = walking;
+		release.priority( ego);
+		draw( ego);
+		}
+
+	show.pic( );
+	return( );
+	}
+
+
+
+if (next.frame)
+	{
+	reset( next.frame);
+	draw( a.old.box);
+	}
+
+
+if (current.status == climbing)
+	{
+	observe.blocks( ego);
+	ignore.objs( ego);
+
+	if (ego.y < 123)
+		{
+		set.priority( ego, 12);
+		}
+	else
+		{
+		set.priority( ego, 14);
+		}
+	}
+else
+	{
+	if (current.status == walking)
+		{
+		observe.objs( ego);
+		if (posn( ego, 68, 129, 100, 135))
+			{
+			observe.blocks( ego);
+			}
+		else
+			{
+			ignore.blocks( ego);
+			}
+		}
+	else [(current.status == sliding)
+		{
+		ignore.blocks( ego);
+		ignore.objs( ego);
+		}
+	}
+
+
+[*****
+:use.it
+[*****
+
+if (current.status != walking)
+	{
+	reset( useit);
+	}
+
+
+if (useit)
+	{
+	reset( useit);
+	}
+else
+	{
+	goto do.it;
+	}
+
+
+if (toy.in.hand)
+	{
+	if (toy.in.hand == old.box)		[	Not to be confused with Toni.
+		{
+		toy.in.hand = 0;
+		position.f( a.old.box, ego.x, ego.y);
+		draw( a.old.box);
+		get.posn( a.old.box, old.box.x, old.box.y);
+		}
+	}
+else
+	{
+	if (has( i.old.box))
+		{
+		distance( ego, a.old.box, work);
+		if (work < close.enough)
+			{
+			toy.in.hand = old.box;
+			erase( a.old.box);
+			old.box.x = 0;
+			old.box.y = 0;
+			}
+		}
+	}
+
+
+[*****
+:do.it
+[*****
+
+if ((current.status == climbing ||		[	don't doit around here!
+	current.status == sliding ||
+	toy.in.hand))
+	{
+	reset( doit);
+	}
+
+if (doit)
+	{
+	reset( doit);
+	}
+else
+	{
+	goto no.input;
+	}
+
+
+if (current.status == playing.on.toy)
+	{
+	if (toy.playing.on == old.box)	[	It has to be!  (In case of more.)
+		{
+		current.status = walking;
+		set.view( ego, v.ego.pg);
+		work = 1;
+		cycle.time( ego, work);
+		start.motion( ego);
+		old.box.x = ego.x;
+		old.box.y = ego.y;
+		old.box.x += 5;			[	Move box to where it appears.
+		old.box.y -= 4;
+		position.f( a.old.box, old.box.x, old.box.y);
+		set( next.frame);
+		x = old.ego.x;
+		y = old.ego.y;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		release.priority( ego);
+		player.control( );
+		reset( keep.cycling);
+		toy.playing.on = 0;
+		}
+	}
+else
+	{
+	if (has( i.old.box))
+		{
+		distance( ego, a.old.box, work);
+		if (work < close.enough && toy.in.hand != old.box)
+			{
+			toy.playing.on = old.box;
+			get.priority( a.old.box, work);
+			erase( a.old.box);
+
+			old.ego.x = ego.x;
+			old.ego.y = ego.y;
+			x = old.box.x;
+			y = old.box.y;
+			x -= ego.x;
+			y -= ego.y;
+			x -= 5;			[	Make room for the kid.
+			y += 4;
+			reposition( ego, x, y);
+			set.view( ego, v.ego.pg.old.box);
+			set.priority.v( ego, work);
+			work = 2;
+			cycle.frequency( ego, work);
+			stop.motion( ego);
+			current.status = playing.on.toy;							%message	21	"Brian Lowe designed this part of the playground."
+			set( keep.cycling);		 								if (!not.used && posn( ego, 27, 53, 44, 80)){print( 21);set( not.used);}
+			}
+		}
+	}
+
+
+[*****
+:no.input
+[*****
+
+if  (current.status == walking && 
+	posn( ego, 29, 159, 41, 160) && 		[	He wants to go up.
+	has( i.spaceship.ladder) &&
+	ego.dir == ego.up)
+	{
+	if (toy.in.hand)
+		{
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 17);
+			message.timer = 44;
+			}
+		}
+	else
+		{
+		current.status = climbing;
+		set.view( ego, v.ego.pg.ladder);
+		x =  36;
+		y = 153;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		set.priority( ego, 14);
+		}
+	}
+
+
+--tunnel.timer;
+if (tunnel.timer == 1)
+	{
+	set( ego.arrived);
+	}
+
+if (ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+
+	if (ego.location == 1)			[	he's inside the first pipe
+		{
+		draw( ego);
+		move.obj( ego, 93, 82, 2, ego.arrived); [ go to pipe 2
+		}
+	else
+		{
+		if (ego.location == 2)		[	Now he's inside pipe 2
+			{
+			erase( ego);
+			tunnel.timer = tunnel.time;
+			}
+		else
+			{
+			if (ego.location == 3)	[	He's finished pipe 2
+				{
+				x = 132;
+				y = 100;
+				x -= ego.x;
+				y -= ego.y;
+				reposition( ego, x, y);
+				set.loop( ego, facing.left);
+				draw( ego);
+				move.obj( ego, 83, 149, 2, ego.arrived); [ go to bottom
+				}
+			else
+				{
+				if (ego.location == 4) [	Off the bottom of the slide.
+					{
+					current.status = walking;
+					toy.playing.on = 0;
+					set.view( ego, v.ego.pg);
+					x =  75;
+					y = 160;
+					x -= ego.x;
+					y -= ego.y;
+					reposition( ego, x, y);
+					release.priority( ego);
+					}
+				}
+			}
+		}
+	}
+			
+
+if (hit.special && current.status == climbing)
+	{
+	if  (ego.y > 140 &&
+		ego.dir == ego.down)		[	Take him off the ladder.
+		{
+		current.status = walking;
+		set.view( ego, v.ego.pg);
+		x =  36;
+		y = 160;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		release.priority( ego);
+		}
+	else
+		{
+		if  (ego.dir == ego.down && 
+			ego.y < 127)			[	The p0 at upper rear of rocket
+			{
+			y = 3;
+			set.priority( ego, 14);
+			x = 0;
+			reposition( ego, x, y);	[	Skip over it, and keep climbing.
+			}
+		else
+			{
+			if  (ego.dir == ego.up &&
+				ego.y > 127)
+				{
+				y = -3;
+				set.priority( ego, 12);
+				x =  0;
+				reposition( ego, x, y); [	Skip over it, and keep climbing.
+				}
+			}
+		}
+	}
+
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.playground, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (edge.ego.hit == right)
+	{
+	if (toy.in.hand)
+		{
+		edge.ego.hit = 0;
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 16);
+			message.timer = 44;
+			}
+		}
+	else
+		{
+		if (!toy.playing.on)
+			{
+			reset( no.script);
+			new.room( rm.pg.central);
+			}
+		}
+	}
+
+if  (edge.ego.hit == top &&
+	current.status == climbing)
+	{
+	reset( no.script);
+	new.room( rm.pg.west.top);
+	}

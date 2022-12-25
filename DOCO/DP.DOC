@@ -1,0 +1,875 @@
+
+
+
+CONCERNING:	DONALD'S PLAYGROUND
+			IBM
+
+TO:			Q/Aers,
+			DISNEY,
+			(and all the ships at sea).
+
+FROM:  		AL LOWE
+
+VERSION:		1.0 sub-A
+			
+DATE:		3/10/86
+
+
+
+
+
+
+KNOWN BUGS:
+
+1.	Change-making room used to work, but doesn't now (unless you 
+ignore the "You owe $0.01" message, pay in exact change, and have
+great luck).  It will "return to the living" soon.  Best way to escape
+now is to pay exactly what you owe, then, if the register opens, just 
+give up, and teleport to room 6.
+
+2.	Most sounds are created, but this interpreter won't work if
+there are 2 or more sounds in a room.  I plugged in the music for the
+menus, but that's about all that will work now.  Sounds are made and
+not too bad, but dis-installed.
+
+3.	Payroll room looks like hell, but I think it seems to function 
+properly.
+
+
+
+
+DIFFERENT STUFF:
+
+1.	KEY ASSIGNMENTS.  
+The arrows and doit key should play almost the entire game.
+You can tell that I finally am using a real IBM-style keyboard, as:
+	F9  is "useit"
+	F10 is "doit" 
+		(That way we keyboard players can rest the left hand at the bottom 
+		of the function keypad and use the right hand on the arrows.)  
+
+Other keys are:
+	F1 for help screen
+	F2 toggles sound 
+	F5 returns to the entrance to Duckburg to change difficulty levels
+	F6 shows memory usage (obviously a debug function).  
+	
+The Help key should be working, so F1 will remind you of this when you're 
+playing the game.
+
+
+2.	"Fast" and "normal" work, and should be used.  In addition, the game 
+now contains a "halffast" mode (which has been a personal favorite of
+mine for years).  This is the initial state of the game.  My plans
+are to NOT give the player the ability to change speeds, rather let
+the program set the speed depending upon the difficulty level
+selected and the amount of memory used in the room.  I would
+appreciate all QA-ers input on which values belong in which rooms.
+
+
+
+
+The following is a condensed, and briefly annotated copy of
+"gamedefs" for your listening and dancing pleasure:
+
+
+
+
+[
+[	dp.doc:
+[
+[			DONALD'S PLAYGROUND-SPECIFIC GAME DEFINITIONS
+[
+[	3/8/86
+[
+
+
+
+[************ FLAGS ************]
+							
+[	LOCAL FLAGS 	(used by many room logics for various things)
+%flag	lcl0						30
+%flag	lcl1						31
+%flag	lcl2						32
+%flag	lcl3						33
+%flag	lcl4						34
+%flag	lcl5						35
+%flag	lcl6						36
+%flag	lcl7						37
+%flag	lcl8						38
+%flag	lcl9						39
+%flag	lcl10					40
+%flag	lcl11					41
+%flag	lcl12					42
+%flag	lcl13					43
+%flag	lcl14					44
+%flag	lcl15					45
+%flag	lcl16					46
+%flag	lcl17					47
+%flag	lcl18					48
+%flag	lcl19					49
+%flag	lcl20					220	[	Extra local variables!!
+%flag	lcl21					221
+%flag	lcl22					222
+%flag	lcl23					223
+%flag	lcl24					224
+%flag	lcl25					225
+%flag	lcl26					226
+%flag	lcl27					227
+%flag	lcl28					228
+%flag	lcl29					229
+%flag	lcl30					160
+%flag	lcl31					161
+%flag	lcl32					162
+%flag	lcl33					163
+%flag	lcl34					164
+%flag	lcl35					165
+%flag	lcl36					166
+%flag	lcl37					167
+%flag	lcl38					168
+%flag	lcl39					169
+%flag	lcl40					80	[	More Extra local variables!!
+%flag	lcl41					81
+%flag	lcl42					82
+%flag	lcl43					83
+%flag	lcl44					84
+%flag	lcl45					85
+%flag	lcl46					86
+%flag	lcl47					87
+%flag	lcl48					88
+%flag	lcl49					89
+
+[	TEMP FLAGS	(used only in dynamic logics; junk)
+%flag	tmp0						230
+%flag	tmp1						231
+%flag	tmp2						232
+%flag	tmp3						233
+%flag	tmp4						234
+%flag	tmp5						235
+%flag	tmp6						236
+%flag	tmp7						237
+%flag	tmp8						238
+%flag	tmp9						239
+%flag	tmp10					240
+%flag	tmp11					241
+%flag	tmp12					242
+%flag	tmp13					243
+%flag	tmp14					244
+%flag	tmp15					245
+%flag	tmp16					246
+%flag	tmp17					247
+%flag	tmp18					248
+%flag	tmp19					249
+
+
+
+%flag	change.room.control			50
+%flag	level					51
+	%define	beginning			0
+	%define	intermediate		1
+	%define	advanced			2
+
+%flag	ego.menu.x				52
+%flag	ego.menu.y				53
+%flag	money.to.fix				54	["wakes up" the proper dynamic
+	%define	dons.money		35
+	%define	owes.money		36
+	%define	paid.money		37
+	%define	earned.money		38
+	%define	other.money		39
+
+%flag	update.window				55
+	%define	update.all		1
+	%define	update.cost		2
+	[also all "money.to.fix" values above (35 = dons.money, etc.)
+
+[Current.status is used throughout the game to store the present situation.
+[By checking this flag, you can see what the game thinks we're doing now.
+%flag	current.status				56
+	%define	starting			0		[	"Current.status" values.
+	%define	paying			1
+	%define	making.change		2
+	%define	payroll			3
+	%define	all.done			4
+	%define	wants.to.quit		5
+	%define	ready.to.start		6
+	%define	waiting.to.leave	7
+	%define	times.up			8
+	%define	playing.game		9
+	%define	train.passing		10
+	%define	playing.on.toy		11
+	%define	climbing			12
+	%define	walking			13
+	%define	sliding			14
+	%define	at.top.of.ladder	15
+	%define	on.top.of.fort		16
+	%define	in.treehouse		17
+	%define	on.pulley			18
+	%define	jumping			19
+	%define	waiting.for.plane	20
+	%define	waiting.for.truck	21
+	%define	truck.in.place		22
+	%define	cleaning.up		23
+	%define	on.monkey.rope		24
+	%define	on.firemans.pole	25
+
+%flag	move.coin					58
+%flag	coin.being.moved			59
+	%define	penny			1		[	"coin.being.moved" values.
+	%define	nickel			2
+	%define	dime				3
+	%define	quarter			4
+	%define	one				5
+	%define	five				6
+	%define	ten				7
+
+%flag	add.coin.to.bankroll		60
+%flag	all.coins.moved			61
+%flag	correct.pay				62
+%flag	incorrect.pay				63
+%flag	ego.is.arrow				64
+
+[Ego.location flag is used in most rooms to determine where we are at present.
+[The values below are used in the change-making and payroll screens.
+%flag	ego.location				65
+	%define	br.penny			1		[	"ego.location" values.
+	%define	br.nickel			2
+	%define	br.dime			3
+	%define	br.quarter		4
+	%define	br.one			5
+	%define	br.five			6
+	%define	br.ten			7
+	%define	br				8
+
+	%define	cg.penny			11
+	%define	cg.nickel			12
+	%define	cg.dime			13
+	%define	cg.quarter		14
+	%define	cg.one			15
+	%define	cg.five			16
+	%define	cg.ten			17
+	%define	cg				18
+
+	%define	rg.penny			21
+	%define	rg.nickel			22
+	%define	rg.dime			23
+	%define	rg.quarter		24
+	%define	rg.one			25
+	%define	rg.five			26
+	%define	rg.ten			27
+	%define	rg.twenty			28
+	%define	rg				29
+
+	%define	total.key			31
+	%define	cashier			101
+	
+	%define	center.line		86		[	In payroll and change rooms.
+	%define	below.line		1
+	%define	above.line		2
+
+
+[%flag	66
+[%flag	67
+[These store the location where these toys were last dropped.
+%flag	old.box.x					68
+%flag	old.box.y					69
+%flag	trampoline.x				70
+%flag	trampoline.y				71
+%flag	somersault.bar.x			72
+%flag	somersault.bar.y			73
+%flag	toy.horse.x				74
+%flag	toy.horse.y				75
+%flag	tetherball.pole.x			76
+%flag	tetherball.pole.y			77
+%flag	parallel.bars.x			78
+%flag	parallel.bars.y			79
+
+
+[**************** TOYS *************]
+[These values are used throughout the game.  In addition, they are the number
+[of the view of ego.nephew playing on them in the playground; if you add 100
+[to them, you get the number of the view of the playground toy with no kid 
+[playing on it.
+	%define	ladder			21		[	bought in Goofy's store
+	%define	pulley			22
+	%define	tire				23
+	%define	old.box			24	
+	%define	slide			25
+	%define	firemans.pole		26
+	%define	rope				27		[	Mickey's store
+	%define	trapeze			28
+	%define	ships.wheel		29
+	%define	trampoline		30
+	%define	catwalk			31
+	%define	somersault.bar		32
+	%define	swing			33		[	Minnie's store
+	%define	spaceship.ladder	34
+	%define	rings			35
+	%define	toy.horse			36
+	%define	tetherball.pole	37
+	%define	parallel.bars		38
+
+[How many of each stack of money he's carrying with him.  Change these to 
+[give him more of less of any type of money.  (This is NOT what determines
+["how much" he has total; see Dons.dollars, dons.cents below for that).
+%flag	ten.count					90
+%flag	five.count				91
+%flag	one.count					92
+%flag	quarter.count				93
+%flag	dime.count				94
+%flag	nickel.count				95
+%flag	penny.count				96
+[These are the x,y coordinates where the money piles show up in the change-
+[making and payroll rooms.
+	%define	br.y				166		[	Bankroll
+	%define	br.erase.y		167
+	%define	br.pile.y			122		[	Bankroll
+	%define	br.y.top			129
+	%define	br.quarter.x		51 		[NOTE:
+	%define	br.quarter.x.right	62		[	BR = bankroll
+	%define	br.dime.x			67		[	CG = change
+	%define	br.dime.x.right	75		[  &	RG = register
+	%define	br.nickel.x		82		[	   . . .throughout the game.
+	%define	br.nickel.x.right	91
+	%define	br.penny.x		97
+	%define	br.penny.x.right	105
+	%define	br.one.x			112
+	%define	br.one.x.right		124
+	%define	br.five.x			127
+	%define	br.five.x.right	139
+	%define	br.ten.x			142
+	%define	br.ten.x.right		154
+							
+	%define	cg.y				72		[	Change piles.
+	%define	cg.erase.y		73
+	%define	cg.pile.y			28
+	%define	cg.y.top			30
+	%define	cg.quarter.x		 2
+	%define	cg.quarter.x.right	13
+	%define	cg.dime.x			17
+	%define	cg.dime.x.right	25
+	%define	cg.nickel.x		32
+	%define	cg.nickel.x.right	41
+	%define	cg.penny.x		47
+	%define	cg.penny.x.right	55
+	%define	cg.one.x			62
+	%define	cg.one.x.right		74
+	%define	cg.five.x			77
+	%define	cg.five.x.right	89
+	%define	cg.ten.x			92
+	%define	cg.ten.x.right		104
+	
+[%flag	97
+[If "debugging" is set, the debug logics are loaded every new.room.
+%flag	debugging					98
+
+[Set "force.a.test" to make every toy appear on the playground.
+[Also, makes nephews ride by on handcar in rm.19.  Also, probably does other 
+[things that I can't remember.
+%flag	force.a.test				99
+
+[The following are misc. housekeeping stuff I put here so I wouldn't have to
+[create it fresh in each room!
+%flag	loop						100
+%flag	cell						101
+%flag	priority					102
+%flag	view						103
+%flag	message					104
+%flag	debounce					105
+%flag	source.x					106
+%flag	source.y					107
+%flag	target.x					108
+%flag	target.y					109
+%flag	work						110	[	Expect
+%flag	x						111	[		these
+%flag	y						112	[			to be garbage.
+%flag	ego.x					113	[	Reset
+%flag	ego.y					114	[		each frame.
+%flag	delta.x					115
+%flag	delta.y					116
+%flag	keep.cycling				117
+%flag	no.cycling				118
+%flag	debug.tmp0				119
+%flag	debug.tmp1				120
+%flag	wait.1			 		121	[always reset by new.room
+%flag	wait.2			 		122	[		"
+%flag	timer.1			 		123	[		"
+%flag	timer.2			 		124	[		"
+%flag	ignore.special				125	[		"
+%flag	ignore.water				126	[		"
+%flag	next.frame				127	[		"
+%flag	doit			 			128	[		"
+%flag	useit					129	[		"
+%flag	lookit			 		130	[		"
+%flag	out.of.memory				131	[		"
+[%flag	132	[		"
+
+[These let the main room tell the various "money.dynamics" where they should
+[print the "You have $ 2.33" messages.  (No biggie!)
+%flag	dons.money.x				133	[	Where to print these amounts
+%flag	dons.money.y				134	[	NOTE:  dynamic checks the
+%flag	owes.money.x				135	[		y-value as a flag to
+%flag	owes.money.y				136	[		decide whether to print
+%flag	paid.money.x				137	[		"
+%flag	paid.money.y				138	[		"
+%flag	earned.money.x				139	[		"
+%flag	earned.money.y				140	[		"
+[%flag	141
+[%flag	142
+[%flag	143
+[%flag	144
+[%flag	145
+[%flag	146
+[%flag	147
+[%flag	148
+%flag	changed.mind				149	[	Takes toys selected away.
+%flag	owes.for.toy.1				150	[	These tell the Change room 
+%flag	owes.for.toy.2				151	[		what he bought in the 
+%flag	owes.for.toy.3				152	[		last store he visited.
+%flag	owes.for.toy.4				153
+%flag	owes.for.toy.5				154
+%flag	owes.for.toy.6				155
+%flag	cost.6.dollars				156
+%flag	cost.6.ten.cents			157
+%flag	cost.6.cents				158
+%flag	sold.out					159	[	All toys here have been sold
+
+[These store the amount of money we're dealing with.  Dons.money is how much
+[he presently has.  Reputedly the same as the total of all those "one.count"
+["dime.count"s up above.
+%flag	dons.ten.dollars			170
+%flag	dons.dollars				171
+%flag	dons.ten.cents				172
+%flag	dons.cents				173
+
+[This one tells the change.making room how much he bought in the previous 
+[store.
+%flag	owes.ten.dollars			174
+%flag	owes.dollars				175
+%flag	owes.ten.cents				176
+%flag	owes.cents				177
+
+[How much he moved above the line.  Could be more than "owed.dollars".  If so,
+[he gets to dip into the till.
+%flag	paid.ten.dollars			178
+%flag	paid.dollars				179
+%flag	paid.ten.cents				180
+%flag	paid.cents				181
+
+[Tells payroll room how much money he made in the previous job.  It then
+[pays him this amount.
+%flag	earned.ten.dollars			182
+%flag	earned.dollars				183
+%flag	earned.ten.cents			184
+%flag	earned.cents				185
+
+[This one lets the store tell the "print logics" the cost of the item Don's
+[presently nearest.  No big deal.
+%flag	cost.ten.dollars			186
+%flag	cost.dollars				187
+%flag	cost.ten.cents				188
+%flag	cost.cents				189
+%flag	work.ten.dollars			190	[Temp storage only.  Junk.
+%flag	work.dollars				191
+%flag	work.ten.cents				192
+%flag	work.cents				193
+
+[These (plus cost.6.stuff up above at 150-153.  I ran out of room here when
+[we added a sixth toy to the stores.)  tell the dynamics how much the toys
+[are worth.
+%flag	cost.1.dollars				194
+%flag	cost.2.dollars				195
+%flag	cost.3.dollars				196
+%flag	cost.4.dollars				197
+%flag	cost.5.dollars				198
+%flag	cost.1.ten.cents			199
+%flag	cost.2.ten.cents			200
+%flag	cost.3.ten.cents			201
+%flag	cost.4.ten.cents			202
+%flag	cost.5.ten.cents			203
+%flag	cost.1.cents				204
+%flag	cost.2.cents				205
+%flag	cost.3.cents				206
+%flag	cost.4.cents				207
+%flag	cost.5.cents				208
+
+[If these flags are non-zero, the dynamics do something with them.  What they
+[do, and how, is determined by the value of "money.to.fix" up above.
+%flag	add.dollars				209
+%flag	add.cents					210
+%flag	sub.dollars				211
+%flag	sub.cents					212
+
+%flag	local.quarter.count			213	[	Temp working storage.  Junk.
+%flag	local.dime.count			214
+%flag	local.nickel.count			215
+%flag	local.penny.count			216
+%flag	local.one.count			217
+%flag	local.five.count			218
+%flag	local.ten.count			219
+	
+
+
+
+
+
+
+
+[************* VIEWS ************]
+%view	v.ego.is.arrow				0	[	EGO VIEWS:
+%view	v.ego			 		1
+%view	v.ego.train.job			2
+	%define	c.hand.left		0		[	loop 2f's cells
+	%define	c.hand.right		1
+	%define	c.hand.down		2
+
+%view	v.ego.toy.job				3
+%view	v.ego.toy.job.hand.out		4
+%view	v.ego.airport.hands.down		5
+%view	v.ego.airport.hands.up		6
+%view	v.ego.airport.throwing		7
+%view	v.ego.melon.job.hands.down	8
+%view	v.ego.melon.job.hands.up		9
+%view	v.ego.melon.job.squawking	10
+%view	v.ego.with.melon			11
+	%define	c.watermelon		0
+	%define	c.pumpkin			1
+	%define	c.cantelope		2
+
+%view	v.ego.melon.job.forward		12
+%view	v.ego.train.job.walking		13
+%view	v.ego.toy.job.climbing		14	
+%view	v.ego.toy.job.climbing.hand.out 15
+%view	v.ego.pg					16
+[%view	v.				17
+%view	v.ego.pg.jumping			18
+[%view	v.				19
+[%view	v.				20
+%view	v.ego.pg.ladder			21	[	Goofy's store
+%view	v.ego.pg.pulley			22	[	These views are with ego.
+%view	v.ego.pg.tire				23	[	These views+100 are w/o ego.
+%view	v.ego.pg.old.box			24	
+%view	v.ego.pg.slide				25
+%view	v.ego.pg.firemans.pole		26
+%view	v.ego.pg.rope				27	[	Mickey's store
+%view	v.ego.pg.trapeze			28
+%view	v.ego.pg.ships.wheel		29
+%view	v.ego.pg.trampoline			30
+[%view	v.				31
+%view	v.ego.pg.somersault.bar		32
+%view	v.ego.pg.swing				33	[	Minnie's store
+[%view	v.				34
+%view	v.ego.pg.rings				35
+%view	v.ego.pg.toy.horse			36
+%view	v.ego.pg.tetherball.pole		37
+%view	v.ego.pg.parallel.bars		38
+%view	v.ego.pg.slide.flipping		39
+[%view	v.				40
+%view	v.pennies					41	[	Each cell shows 1 more coin.
+%view	v.nickels					42	[		"
+%view	v.dimes					43	[		"
+%view	v.quarters				44	[		"
+%view	v.ones					45	[	Only 1 cell.
+%view	v.fives					46	[		"
+%view	v.tens					47	[		"
+%view	v.bill.pile				48	[	Generic stack, like coins.
+%view	v.bill.blank				49	[	1 blank cell to erase with.
+[%view	v.				50
+%view	v.money.drawer				51
+[%view	v.				52
+[%view	v.				53
+[%view	v.				54
+[%view	v.				55
+[%view	v.				56
+[%view	v.				57
+[%view	v.				58
+[%view	v.				59
+[%view	v.				60
+%view	v.airport.sign				61	[	MAIN STREET:
+%view	v.toy.sign				62
+%view	v.produce.sign				63
+%view	v.train.depot.sign			64
+%view	v.fountain				65
+%view	v.5.and.10.sign			66
+%view	v.hardware.sign			67
+%view	v.level.sign				68	[	for Room 3
+[%view	v.				69
+[%view	v.				70
+%view	v.conveyor				71	[	PRODUCE HANDLER GAME:
+%view	v.watermelon				72
+%view	v.pumpkin					73
+%view	v.cantelope				74
+%view	v.melon.splat				75
+[%view	v.				76
+[%view	v.				77
+[%view	v.				78
+[%view	v.				79
+[%view	v.				80
+%view	v.airplane				81	[	AIRPORT GAME:
+	%define	c.level			0
+	%define	c.aimed.up		1
+
+%view	v.large.airplane			82
+%view	v.baggage					83	[	3 loops, 10 cels each.
+%view	v.invisible.baggage			84	[	Each cel is name of airport
+%view	v.trailer					85	[	Same as baggage, above.
+[%view	v.				86
+%view	v.tractor					87
+%view	v.small.truck				88
+%view	v.large.airplane.entering	89
+%view	v.large.airplane.leaving		90
+[%view	v.				91
+[%view	v.				92
+[%view	v.				93
+[%view	v.				94
+[%view	v.				95
+[%view	v.				96
+[%view	v.				97
+[%view	v.				98
+%view	v.store.rope				99	[	STORE VIEWS:
+%view	v.goofy.store				100	[	Working behind the register
+%view	v.mickey.store				101	[		"
+%view	v.minnie.store				102	[		"
+%view	v.goofy.cash.register		103	[	Each store's cash register
+%view	v.mickey.cash.register		104	[		"
+%view	v.minnie.cash.register		105	[		"
+%view	v.store.rope.and.pulley		106	[	Playground toys that don't
+%view	v.store.firemans.pole		107	[	fit in the store, or are
+%view	v.store.catwalk			108	[	overlay.pics.
+%view	v.store.slide				109
+%view	v.handcar					110	[	NEPHEW DEPARTMENT:	
+%view	v.rr.signal				111	[	Rm19:  crossing the tracks
+%view	v.handcar.waving			112
+%view	v.title.kids				113
+[%view	v.				114
+[%view	v.				115
+[%view	v.				116
+[%view	v.				117
+[%view	v.				118
+[%view	v.				119
+%view	v.pg.flag					120	
+%view	v.pg.ladder				121	[	Goofy's store
+%view	v.pg.pulley				122
+%view	v.pg.tire					123
+%view	v.pg.old.box				124	
+[%view	v.				125
+[%view	v.				126
+[%view	v.				127	[	Mickey's store
+%view	v.pg.trapeze				128
+%view	v.pg.ships.wheel			129
+%view	v.pg.trampoline			130
+[%view	v.				131
+%view	v.pg.somersault.bar			132
+%view	v.pg.swing				133	[	Minnie's store
+%view	v.pg.spaceship.ladder		134
+%view	v.pg.rings				135
+%view	v.pg.toy.horse				136
+%view	v.pg.tetherball.pole		137
+%view	v.pg.parallel.bars			138
+[%view	v.				139
+[%view	v.				140			[	TOY STORE GAME:
+%view	v.toys					141	[2 loops w/10 cels each
+[%view	v.				142
+[%view	v.				143
+[%view	v.				144
+[%view	v.				145
+%view	v.toy.splat				146
+%view	v.toy.store.ladder			147			
+%view	v.toy.store.bar			148			
+%view	v.toy.store.switch			149
+[%view	v.				150
+%view	v.switch					151	[	TRAIN GAME:
+%view	v.train					152	[	4 loops, L,R,F,B
+[%view	v.				153
+[%view	v.				154
+[%view	v.				155
+%view	v.train.west.to.south		156
+%view	v.train.south.to.west		157
+%view	v.train.south.to.east		158
+%view	v.train.east.to.south		159
+%view	v.train.east.to.north		160
+%view	v.train.north.to.west		161
+%view	v.train.north.to.east		162
+	%define	train			152
+	%define	train.west.to.south	156
+	%define	train.south.to.west	157
+	%define	train.south.to.east	158
+	%define	train.east.to.south	159
+	%define	train.east.to.north	160
+	%define	train.north.to.west	161
+	%define	train.north.to.east	162
+
+%view	v.tiny.town				163
+%view	v.town.names				164
+%view	v.turnout.west.to.south		165
+%view	v.turnout.south.to.west		166
+%view	v.turnout.south.to.east		167
+%view	v.turnout.east.to.south		168
+%view	v.turnout.east.to.north		169
+
+
+
+[************* ANIMATED OBJECTS ************]	[Bytes allocated:
+%object	ego						0	[	1500
+	%define	obj.1			1		[	Each object's name is 
+	%define	obj.2			2		[		its size x 100.
+	%define	obj.3			3
+	%define	obj.4			4
+	%define	obj.5			5
+	%define	obj.6			6
+	%define	obj.7			7
+	%define	obj.8			8
+	%define	obj.9			9
+	%define	obj.10			10
+	%define	obj.11			11
+	%define	obj.12			12
+	%define	obj.13			13
+	%define	obj.14			14
+	%define	obj.15			15
+	%define	obj.18			16
+	
+%object	a.pennies					17	[	MONEY
+%object	a.nickels					18
+%object	a.dimes					19
+%object	a.quarters				20
+%object	a.ones					21
+%object	a.fives					22
+%object	a.tens					23
+
+%object	a.switch.1				24	[	100 bytes each
+%object	a.switch.2				25
+%object	a.switch.3				26
+%object	a.switch.4				27
+%object	a.switch.5				28
+%object	a.switch.6				29
+
+%object	a.town.1					30	[	128 bytes each
+%object	a.town.2					31
+%object	a.town.3					32
+%object	a.town.4					33
+%object	a.town.5					34
+%object	a.town.6					35
+%object	a.town.7					36
+%object	a.town.8					37
+
+%object	a.turnout.1				38	[	80 bytes each
+%object	a.turnout.2				39
+%object	a.turnout.3				40
+%object	a.turnout.4				41
+%object	a.turnout.5				42
+%object	a.turnout.6				43
+
+
+[************* INVENTORY OBJECTS ************]
+
+[Type "get object" then one of these values, and a toy will appear in the 
+[playground.  To get everything, "set flag" "99" "1" is lots easier.
+%object	i.anything				40
+%object	i.ladder					41	[	Goofy's store
+%object	i.pulley					42
+%object	i.tire					43
+%object	i.old.box					44	
+%object	i.slide					45		
+%object	i.firemans.pole			46
+%object	i.rope					47	[	Mickey's store
+%object	i.trapeze					48
+%object	i.ships.wheel				49
+%object	i.trampoline				50
+%object	i.catwalk					51
+%object	i.somersault.bar			52
+%object	i.swing					53	[	Minnie's store
+%object	i.spaceship.ladder			54
+%object	i.rings					55
+%object	i.toy.horse				56
+%object	i.tetherball.pole			57
+%object	i.parallel.bars			58
+
+
+
+[************ ROOM LOGICS ************]
+%define	rm.title					1
+%define	rm.credits				2
+%define	rm.pick.a.level			3
+%define	rm.menu.west				6
+%define	rm.menu.east				7
+%define	rm.goofy.store				11
+%define	rm.mickey.store			12
+%define	rm.minnie.store			13
+%define	rm.change					14
+%define	rm.pg.north				15	[	PG stands for playground
+%define	rm.pg.west				16
+%define	rm.pg.central				17
+%define	rm.pg.east				18
+%define	rm.pg.south				19	[	crossing the tracks
+%define	rm.pg.west.top				20
+%define	rm.train.job				21
+%define	rm.melon.job				22
+%define	rm.toy.job				23
+%define	rm.airport.job				24
+%define	rm.payroll				25
+
+
+[************ OVERLAY PICTURES ************]
+%define	pic.slide					4	[	Pictures without a room.
+%define	pic.monkey.rope			5
+%define	pic.catwalk				8
+%define	pic.pulley.rope.top			9
+%define	pic.pulley.rope.bottom		10
+%define	pic.fort.chain				26
+%define	pic.firemans.pole			27
+
+
+
+[************ DYNAMIC LOGICS ************]
+%define	rm14.init.logs				 2	[	Rooms without a picture.
+%define	rm24.init.logs				 4
+%define	rm23.init.logs				26
+%define	rm21.init.logs				27
+%define	startup.logics				28
+%define	debug.logics				29
+%define	last.logic	 			30
+%define	help.logics				31
+%define	job.logics				32
+%define	store.logics				33
+%define	payroll.logics				34
+%define	dons.money.logics			35
+%define	owes.money.logics			36
+%define	paid.money.logics			37
+%define	earned.money.logics			38
+%define	goofy.change.logics			41
+%define	mickey.change.logics		42
+%define	minnie.change.logics		43
+
+
+
+[************ SOUND EFFECTS ************]
+%define	s.ok						1
+%define	s.wrong					2
+%define	s.melon.splat				3
+%define	s.squawk					4
+%define	s.melon					5
+%define	s.train.whistle			6
+%define	s.train.starting			7
+%define	s.train.moving				8
+%define	s.train.stopping			9
+%define	s.toy.train.coming			10
+%define	s.toy.train.whistle			11
+%define	s.toy.train.going			12
+%define	s.toy.falling				13
+%define	s.toy.splat				14
+%define	s.airplane.landing			15
+%define	s.airplane.taking.off		16
+%define	s.move.money				17
+%define	s.airplane.parked			18
+%define	s.game.over				19
+%define	s.rr.signal				20
+
+[************ MUSIC ************]
+%define	m.menu					21
+%define	m.playground				22
+%define	m.job					23
+%define	m.store					24
+
+[************ MORE SOUND EFFECTS ************]
+%define	s.blip					25
+%define	s.ego.jumping				26

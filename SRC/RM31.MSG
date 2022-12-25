@@ -1,0 +1,68 @@
+[messages for room 31 -- the help room
+
+
+[	%message	21		"DONALD DUCK'S PLAYGROUND"	
+[	%message	22				"Help"					
+[	
+[	%message	23	"GOAL:        earn money to build a"
+[	%message	24				"playground"
+[	%message	25	"JOBS:        move Donald through doors"
+[	%message	26				"at right side of street"
+[	%message	27	"STORES:      move Donald through doors"
+[	%message	28				"at left side of street"
+[	%message	29	"PLAYGROUND:  follow sign to the park"
+[	
+[	%message	30	" F1  display help screen"
+[	%message	31	" F2  turn sound off and on"
+[	%message	32	" F3  start the game over"
+[	%message	33	" F5  return to Main Street"
+[	%message	34	" F9  move portable toys on playground"
+[	%message	35	"F10  actions (switch tracks, play, pick"						        
+[	%message	36			    "up luggage, etc.)"
+[	%message	37	"ESC  pause the game"
+[	
+[	%message	38	"Use arrow keys or joystick to move"
+[	%message	39	"Joystick buttons:  Upper button = F9"
+[	%message	40				    "Lower button = F10"
+[	%message	41	"See Player's Guide for more information"
+[	[			 |    |    |    |    |    |    |    |   |
+[	[			 0    5    10   15   20   25   30   35 39
+
+
+%message	21
+"Your goal is to help Donald build a playground for his nephews.
+ He buys playground toys in the stores on the left side of Main Street.\n\n
+He earns money by working in the stores on the right side of Main Street.\n\n
+To enter a store, just move Donald through the doorway.\n\n
+To see Donald's nephews play on the toys, follow the sign to Duckburg Park."
+
+%message	23
+"Use the \"X\" key to do things (switch tracks, play on the toys,
+ pick up luggage, etc).\n\n
+Use the \"Z\" key to move toys on the playground.\n\n
+Press ESC to use the menus.\n\n
+Use the arrow keys, joystick, or mouse to move Donald."
+
+%message	24
+"See your Player's Guide for more information."
+
+
+
+%message	31
+"Your goal is to help Donald build a playground for his nephews.
+ He buys playground toys in the stores on the left side of Main Street.\n\n
+He earns money by working in the stores on the right side of Main Street.\n\n
+To enter a store, just move Donald through the doorway.\n\n
+To see Donald's nephews play on the toys, follow the sign to Duckburg Park."
+
+%message	33
+"Use the \"X\" key to do things (switch tracks, play on the toys,
+ pick up luggage, etc).\n\n
+Use the \"Z\" key to move toys on the playground.\n\n
+Press ESC to use the menus.\n\n
+Use the arrow keys, joystick, or mouse to move Donald."
+
+%message	34
+"See the Player's Guide for more information."
+
+

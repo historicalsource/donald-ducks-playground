@@ -1,0 +1,56 @@
+[logics for room 30 -- rm0.init.logics
+
+%include "gamedefs"
+
+
+if (!force.a.test)
+	{
+	reset( debugging);
+	reset( enable.trace);
+	}
+
+clear.lines( 21, 24, 0);
+
+if (demo)
+	{
+	prevent.input( );
+	}
+
+player.control( );				[	Return ego to normal.
+reset( keep.cycling);
+reset( no.cycling);
+reset( out.of.memory);
+reset( enable.double.click);
+
+wait.1 = 0;					[	no global clocks
+wait.2 = 0;
+timer.1 = 0;
+timer.2 = 0;
+seconds.in.room = 0;
+old.seconds.in.room = 0;
+
+reset( doit);					[	controller stuff
+reset( useit);
+reset( have.match);
+
+work = 30;
+:loop1;
+if (work < 90)
+	{
+	reset.v( work);
+	work @= 0;
+	++work;
+	goto loop1;
+	}
+
+if (current.room > rm.menu.east)		
+	{
+	enable.item( cGoToMainStreet);
+	}
+else
+	{
+	disable.item( cGoToMainStreet);
+	}
+
+animate.obj( ego);
+

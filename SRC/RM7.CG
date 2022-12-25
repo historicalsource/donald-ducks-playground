@@ -1,0 +1,241 @@
+[logics for room 7 -- rm.menu.east
+
+%include "rm7.msg"
+%include "gamedefs"
+
+
+%define	demo.delay.time		33
+
+%define	music.done			lf0
+%define	ego.arrived			lf1
+
+%define	demo.delay			lcl0
+
+%object	a.airport.sign			obj.9
+%object	a.toy.store.sign		obj.10
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+
+	load.view( v.ego);
+	set.view( ego, v.ego);
+
+	load.view( v.airport.sign);
+	load.view( v.toy.sign);
+	load.view( v.produce.sign);
+	load.view( v.train.depot.sign);
+
+	load.sound( m.menu);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	animate.obj( a.airport.sign);
+	ignore.blocks( a.airport.sign);
+	position( a.airport.sign, 139, 79);
+	set.priority( a.airport.sign, 15);
+	set.view( a.airport.sign, v.airport.sign);
+	work = 7;
+	cycle.frequency( a.airport.sign, work);
+
+	animate.obj( a.toy.store.sign);
+	ignore.blocks( a.toy.store.sign);
+	position( a.toy.store.sign, 88, 62);
+	set.priority( a.toy.store.sign, 15);
+	set.view( a.toy.store.sign, v.toy.sign);
+	work = 5;
+	cycle.frequency( a.toy.store.sign, work);
+
+	[				view, loop, cell, x, y, priority
+	add.to.picture( v.produce.sign, 0, 0, 88, 34, 15, 15);
+	add.to.picture( v.train.depot.sign, 0, 0, 8, 23, 15, 15);
+
+	draw( a.airport.sign);
+	draw( a.toy.store.sign);
+	if ((machine.type == JR || machine.type == TANDY))
+		{
+		stop.update( a.toy.store.sign);
+		}
+
+
+	if (going.to.menu)
+		{
+		reset( going.to.menu);
+		position( ego, 33, 111);
+		}
+	else
+		{
+		if (previous.room == rm.pick.a.level)
+			{
+			position( ego, 60, 166);
+			}
+		else
+			{
+			if (previous.room == rm.menu.west)
+				{
+				if (ego.y < 60)
+					{
+					ego.y = 60;
+					position.f( ego, ego.x, ego.y);
+					}
+				}
+			else
+				{
+				if (previous.job)
+					{
+					if (previous.job == rm.train.job)
+						{
+						set.loop( ego, facing.front);
+						position( ego, 21, 61);
+						}
+					if (previous.job == rm.melon.job)
+						{
+						set.loop( ego, facing.left);
+						position( ego, 71, 73);
+						}
+					if (previous.job == rm.toy.job)
+						{
+						set.loop( ego, facing.left);
+						position( ego, 107, 114);
+						}
+					if (previous.job == rm.airport.job)
+						{
+						set.loop( ego, facing.left);
+						position( ego, 139, 150);
+						}
+					}
+				else
+					{
+					position( ego, 33, 111);
+					}
+				}
+			}
+		}
+
+	if (demo)
+		{
+		speed = normal;
+		ego.location = 0;
+		position( ego, 138, 167);
+		display( 22, 0, 16);
+		display( 23, 0, 17);
+		display( 24, 0, 18);
+		move.obj( ego, 122, 151, 0, ego.arrived);
+		}
+
+	previous.job = 0;
+
+	draw( ego);
+
+	set( music.done);
+	if (level == beginning)
+		{
+		speed = normal;
+		}
+	else
+		{
+		speed = halffast;
+		}
+
+	show.pic( );
+	return( );
+	}
+
+		
+[*****
+:no.input
+[*****
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.menu, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (edge.ego.hit == left)
+	{
+	reset( no.script);
+	new.room( rm.menu.west);
+	}
+
+if (demo)
+	{
+	--demo.delay;
+	if (demo.delay == 1)
+		{
+		set( ego.arrived);
+		}
+	}
+
+if (demo && ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+	if (ego.location == 1)
+		{
+		set.loop( ego, facing.right);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 2)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 86, 115, 0, ego.arrived);
+		}
+	if (ego.location == 3)
+		{
+		set.loop( ego, facing.right);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 4)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 52, 81, 0, ego.arrived);
+		}
+	if (ego.location == 5)
+		{
+		set.loop( ego, facing.right);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 6)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 22, 81, 0, ego.arrived);
+		}
+	if (ego.location == 7)
+		{
+		set.loop( ego, facing.back);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 8)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 2, 101, 0, ego.arrived);
+		}
+	if (ego.location == 9)
+		{
+		reset( no.script);
+		new.room( rm.menu.west);
+		}
+	}
+
+if (hit.special)
+	{
+	if (posn( ego, 20, 49, 28, 51))		{previous.job = rm.train.job;}
+	if (posn( ego, 74, 71, 86, 84))		{previous.job = rm.melon.job;}
+	if (posn( ego, 107, 97, 119, 120))		{previous.job = rm.toy.job;}
+	if (posn( ego, 147, 144, 159, 156))	{previous.job = rm.airport.job;}
+
+	if (previous.job)
+		{
+		reset( no.script);
+		new.room.f( previous.job);
+		}
+	}

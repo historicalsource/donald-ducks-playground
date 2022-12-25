@@ -1,0 +1,223 @@
+[logics for room 20 -- rm.pg.west.top -- rocket top
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+%define	tunnel.time			19
+
+
+%define	ego.arrived			lf0
+%define	music.done			lf1
+
+%define	tunnel.timer			timer.1
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+
+	ego.location = 0;
+
+	if (force.a.test)
+		{
+		get( i.catwalk);
+		}
+
+	if (has( i.catwalk))
+		{
+		work = pic.catwalk;
+		load.pic( work);
+		load.view( v.ego.pg.slide);
+		load.view( v.ego.pg.slide.flipping);
+		}
+	else
+		{
+		block( 41, 39, 58, 59);
+		}
+
+	load.view( v.ego.pg.ladder);
+	load.view( v.ego.pg);
+	load.sound( m.playground);
+	set( music.done);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	if (has( i.catwalk))
+		{
+		work = pic.catwalk;
+		overlay.pic( work);
+		}
+
+	set.view( ego, v.ego.pg.ladder);
+	set.priority( ego, 4);
+	position( ego, 35, 166);
+	draw( ego);
+	current.status = climbing;
+
+	show.pic( );
+	return( );
+	}							[	END init.logs
+
+
+[*****
+:no.input
+[*****
+
+if  (posn( ego, 30, 47, 38, 49) && 
+	current.status == walking &&
+	ego.dir == ego.down)
+	{
+	set( doit);
+	}
+
+
+if  (doit &&
+	posn( ego, 30, 47, 38, 49) && 
+	current.status == walking)
+	{
+	current.status = climbing;
+	set.view( ego, v.ego.pg.ladder);
+	x = 35;
+	y = 53;
+	x -= ego.x;
+	y -= ego.y;
+	reposition( ego, x, y);
+	}
+
+if (current.status == climbing)
+	{
+	observe.blocks( ego);
+
+	if ((ego.dir == ego.left ||
+		ego.dir == ego.down.left ||
+		ego.dir == ego.up.left ||
+		ego.dir == ego.up.right ||
+		ego.dir == ego.down.right ||
+		ego.dir == ego.right))
+		{
+		ego.dir = ego.stopped;
+		}
+	}
+
+if (hit.special)
+	{
+	if (current.status == climbing)
+		{
+		current.status = walking;
+		set.view( ego, v.ego.pg);
+		x = 0;
+		y = 48;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	}
+
+
+if (posn( ego, 55, 45, 60, 50))			[	start him down the slide
+	{
+	current.status = sliding;
+	set.view( ego, v.ego.pg.slide);
+	x = 62;
+	y = 51;
+	x -= ego.x;
+	y -= ego.y;
+	reposition( ego, x, y);
+	move.obj( ego, 91, 80, 2, ego.arrived);
+	}		
+
+
+if (ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+
+	if (ego.location == 1)			[	inside first pipe
+		{
+		move.obj( ego, 96, 80, 0, ego.arrived); [ end of first pipe
+		}
+	else
+		{
+		if (ego.location == 2)		[	at end of first pipe
+			{
+			move.obj( ego, 142, 126, 2, ego.arrived); [ beginning of second pipe
+			}
+		else
+			{
+			if (ego.location == 3)	[	inside pipe 2
+				{
+				erase( ego);
+				position( ego, 98, 135); [	put at end of pipe 2
+				set.view( ego, v.ego.pg.slide.flipping);
+				work = 2;
+				cycle.frequency( ego, work);
+				step.size( ego, work);
+				tunnel.timer = tunnel.time;
+				}
+			else
+				{
+				if (ego.location == 4)	[	time inside tunnel 2 is up.
+					{
+					draw( ego);
+					set( keep.cycling);
+					move.obj( ego, 74, 111, 0, ego.arrived);
+					}
+				else
+					{
+					if (ego.location == 5) [	top of "flipping" arc
+						{
+						move.obj( ego, 57, 128, 0, ego.arrived);
+						}
+					else
+						{
+						if (ego.location == 6)
+							{
+							ignore.blocks( ego);
+							set.view( ego, v.ego.pg.slide);
+							work = 1;
+							cycle.frequency( ego, work);
+							step.size( ego, work);
+							reset( keep.cycling);
+							set.priority( ego, 14);
+							move.obj( ego, 16, 167, 2, ego.arrived);
+							}
+						else
+							{
+							erase( ego);
+							reset( no.script);
+							new.room( rm.pg.west);	[	Goodbye.
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+--tunnel.timer;
+if (tunnel.timer == 1)
+	{
+	set( ego.arrived);
+	}
+
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.playground, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (edge.ego.hit == bottom)
+	{
+	erase( ego);
+	reset( no.script);
+	new.room( rm.pg.west);
+	}

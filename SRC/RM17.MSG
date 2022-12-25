@@ -1,0 +1,13 @@
+[messages for room 17 -- rm.pg.central
+
+
+%message	16	
+"This playground is almost empty!"
+
+%message	17	
+"Won't you help Donald fill it with"
+
+%message	18	
+"toys for his nephews?"
+
+

@@ -1,0 +1,360 @@
+[logics for room 1 -- rm.titles 	(uses pic.1 & 2)
+
+%include "rm1.msg"
+%include "gamedefs"
+
+
+%define	delay.screen.1			39
+%define	delay.screen.2			99
+%define	delay.screen.3			99
+
+
+%define	screen.number		lcl0
+%define	music.start		lcl1
+%define	donald.on.screen	lf1
+%define	music.done		lf2
+%define	kid.arrived		lf3
+%define	kid.location		lcl4
+
+
+%object	a.kid.1			obj.7
+%object	a.kid.2			obj.8
+%object	a.kid.3			obj.9
+
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	load.view( v.title.kid.1);
+	load.view( v.title.kid.2);
+	load.view( v.title.kid.3);
+	load.view( v.ego);
+	load.sound( m.playground);
+	
+	work = pic.logo;
+	load.pic( work);
+
+	load.pic( current.room);
+
+	work = rm.credits;
+	load.pic( work);
+
+	work = pic.logo;
+	draw.pic( work);
+	show.pic( );
+	draw.pic( current.room);
+
+	screen.number = 1;
+	wait.1 = delay.screen.1;
+	step = 6;						[	size of kids' jumps
+
+	animate.obj( a.kid.1);
+	set.view( a.kid.1, v.title.kid.1);
+	set.cel( a.kid.1, 0);
+	position( a.kid.1, 0, 160);
+	ignore.objs( a.kid.1);
+	set.priority( a.kid.1, 14);
+
+	animate.obj( a.kid.2);
+	set.view( a.kid.2, v.title.kid.2);
+	set.cel( a.kid.2, 0);
+	position( a.kid.2, 16, 159);
+	ignore.objs( a.kid.2);
+	set.priority( a.kid.2, 13);
+	stop.cycling( a.kid.2);
+
+	animate.obj( a.kid.3);
+	set.view( a.kid.3, v.title.kid.3);
+	set.cel( a.kid.3, 0);
+	position( a.kid.3, 32, 158);
+	ignore.objs( a.kid.3);
+	set.priority( a.kid.3, 13);
+	stop.cycling( a.kid.3);
+
+	set.view( ego, v.ego);
+
+	prevent.input( );
+
+	clear.lines( 21, 24, 0);
+
+	return( );
+	}
+
+
+prevent.input( );
+
+if (donald.on.screen)
+	{
+	start.cycling(a.kid.3);
+	}
+
+if (kid.arrived)
+	{
+	reset( kid.arrived);
+	++kid.location;
+
+	if (kid.location == 1)
+		{
+		stop.cycling( a.kid.1);
+		set.cel( a.kid.1, 0);
+		set.priority( a.kid.1, 13);
+
+		get.posn( a.kid.2, x, y);
+		x += 49;
+		set.cel( a.kid.2, 0);
+		end.of.loop( a.kid.2, done);
+		set.priority( a.kid.2, 14);
+		move.obj.f( a.kid.2, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 2)
+		{
+		stop.cycling( a.kid.2);
+		set.cel( a.kid.2, 0);
+		set.priority( a.kid.2, 13);
+
+		get.posn( a.kid.3, x, y);
+		x += 49;
+		set.cel( a.kid.3, 0);
+		end.of.loop( a.kid.3, done);
+		set.priority( a.kid.3, 14);
+		move.obj.f( a.kid.3, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 3)
+		{
+		stop.cycling( a.kid.3);
+		set.cel( a.kid.3, 0);
+		set.priority( a.kid.3, 13);
+
+		get.posn( a.kid.1, x, y);
+		x += 49;
+		set.cel( a.kid.1, 0);
+		end.of.loop( a.kid.1, done);
+		set.priority( a.kid.1, 14);
+		move.obj.f( a.kid.1, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 4)
+		{
+		stop.cycling( a.kid.1);
+		set.cel( a.kid.1, 0);
+		set.priority( a.kid.1, 13);
+
+		get.posn( a.kid.2, x, y);
+		x += 49;
+		set.cel( a.kid.2, 0);
+		end.of.loop( a.kid.2, done);
+		set.priority( a.kid.2, 14);
+		move.obj.f( a.kid.2, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 5)
+		{
+		stop.cycling( a.kid.2);
+		set.cel( a.kid.2, 0);
+		set.priority( a.kid.2, 13);
+
+		get.posn( a.kid.3, x, y);
+		x += 49;
+		set.cel( a.kid.3, 0);
+		end.of.loop( a.kid.3, done);
+		set.priority( a.kid.3, 14);
+		move.obj.f( a.kid.3, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 6)
+		{
+		stop.cycling( a.kid.3);
+		set.cel( a.kid.3, 0);
+		set.priority( a.kid.3, 13);
+
+		get.posn( a.kid.1, x, y);
+		x += 49;
+		set.cel( a.kid.1, 0);
+		end.of.loop( a.kid.1, done);
+		set.priority( a.kid.1, 14);
+		move.obj.f( a.kid.1, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 7)
+		{
+		stop.cycling( a.kid.1);
+		set.cel( a.kid.1, 0);
+		set.priority( a.kid.1, 13);
+
+		get.posn( a.kid.2, x, y);
+		x += 49;
+		set.cel( a.kid.2, 0);
+		end.of.loop( a.kid.2, done);
+		set.priority( a.kid.2, 14);
+		move.obj.f( a.kid.2, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 8)
+		{
+		stop.cycling( a.kid.2);
+		set.cel( a.kid.2, 0);
+		set.priority( a.kid.2, 13);
+
+		get.posn( a.kid.3, x, y);
+		x += 49;
+		set.cel( a.kid.3, 0);
+		end.of.loop( a.kid.3, done);
+		set.priority( a.kid.3, 14);
+		move.obj.f( a.kid.3, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 9)
+		{
+		stop.cycling( a.kid.3);
+		set.cel( a.kid.3, 0);
+		set.priority( a.kid.3, 13);
+
+		get.posn( a.kid.1, x, y);
+		x += 49;
+		set.cel( a.kid.1, 0);
+		end.of.loop( a.kid.1, done);
+		set.priority( a.kid.1, 14);
+		move.obj.f( a.kid.1, x, y, step, kid.arrived);
+		}
+
+	if (kid.location == 10)
+		{
+		display( 22, 2, 21);
+		display( 23, 3, 22);
+		display( 24, 3, 23);
+		}
+
+	if (kid.location == 11)
+		{
+		set.loop( a.kid.3, facing.right);
+		move.obj( a.kid.3, 138, 160, 0, kid.arrived);
+		}
+
+	if (kid.location == 12)
+		{
+		set.loop( a.kid.3, facing.front);
+		move.obj( a.kid.3, 139, 167, 0, kid.arrived);
+		}
+
+	}
+
+
+
+if ((have.key( ) || doit || useit))
+	{
+	if (screen.number == 1)
+		{
+		goto show.title;
+		}
+	else
+		{
+		new.room( rm.pick.a.level);
+		}
+	}
+
+
+--wait.1;
+if (!wait.1 && screen.number == 1)
+	{
+	
+	:show.title;
+
+	music.start = 2;
+
+	show.pic( );
+
+	draw( a.kid.1);
+	draw( a.kid.2);
+	draw( a.kid.3);
+	end.of.loop( a.kid.1, done);
+	move.obj( a.kid.1, 49, 160, 6, kid.arrived);
+
+	++screen.number;
+	wait.1 = delay.screen.2;
+	}
+
+
+if (!wait.1 && music.done && screen.number == 2)
+	{
+	erase(a.kid.3);
+
+	music.start = 2;
+	work = rm.credits;
+	draw.pic( work);
+	show.pic( );
+
+	[(y>3 && y<19), (x>1), message#]
+	display( 2, 4, 25);
+	display( 3, 9, 26);
+	display( 4, 9, 28);
+	display( 5, 13, 29);
+	display( 6, 16, 30);
+
+	display( 8, 4, 31);
+	display( 9, 9, 32);
+	display( 10, 9, 33);
+	display( 11, 9, 34);
+
+	display( 13, 4, 35);
+	display( 14, 9, 36);
+
+	display( 16, 4, 38);
+	display( 17, 9, 39);
+
+	++screen.number;
+	wait.1 = delay.screen.3;
+	}
+
+
+if (!wait.1 && music.done && screen.number == 3)
+	{
+	set( demo);
+	}
+
+if (demo)
+	{
+	new.room( rm.menu.east);
+	}
+
+--music.start;
+if (music.start == 1)
+	{
+	sound( m.playground, music.done);
+	}
+
+
+if (edge.obj.hit == right)
+	{
+	if (obj.hit.edge == a.kid.1)
+		{
+		erase( a.kid.1);
+		}
+
+	if (obj.hit.edge == a.kid.2)
+		{
+		erase( a.kid.2);
+		}
+
+	if (obj.hit.edge == a.kid.3)
+		{
+		erase( a.kid.3);
+
+		set.view(a.kid.3,v.ego);
+		release.priority(a.kid.3);
+		position(a.kid.3,72,60);
+		draw(a.kid.3);
+		set(donald.on.screen);
+		move.obj(a.kid.3,72,100,1,kid.arrived);
+		}
+	}
+
+
+[*****
+:exit
+[*****

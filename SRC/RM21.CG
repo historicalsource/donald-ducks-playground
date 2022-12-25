@@ -1,0 +1,1509 @@
+[logics for room 21 -- rm.train.job
+
+%include "rm21.msg"
+%include "gamedefs"
+
+
+[	The following naming conventions apply in this room:
+[						   Towns 1 -  8 are numbered  1 -  8
+[						Turnouts 1 -  6 are numbered 11 - 16
+[						 Corners 1 - 11 are numbered 21 - 31
+[						Switches 1 -  6 correspond to turnouts 1 - 6
+
+[	The messages are equal to the town number, plus 20.  "Town" is defined
+[as the highest town number + 1, so the phrase "if (dest < town) will catch
+[all towns only.  Likewise, with "turnout" and "corner".  "Switch" is the
+[thing Don grabs with his hand.  "Turnout" is the thing on the railroad that
+[makes the train go a different direction.
+
+[	There are 2 town.name patches because when they were add.to.pics like 
+[the other names, the train would hang up on their baselines.
+
+
+
+
+					[	LOCAL EQUATES:
+
+%define	train.whistle			  6	[	same as their sound.numbers
+%define	train.starting			  7
+%define	train.moving			  8
+%define	train.stopping			  9
+
+%define	duck.corners			  1
+%define	ducks.landing			  2
+%define	ducktropolis			  3
+%define	duck.valley			  4
+%define	duckburg				  5
+%define	duck.city				  6
+%define	duckville				  7
+%define	ducktown				  8
+%define	town					  9	[	for comparison purposes only
+
+%define	turnout.1				 11
+%define	turnout.2				 12
+%define	turnout.3				 13
+%define	turnout.4				 14
+%define	turnout.5				 15
+%define	turnout.6				 16
+%define	turnout				 17	[	for comparison purposes only
+
+%define	corner.1				 21
+%define	corner.2				 22
+%define	corner.3				 23
+%define	corner.4				 24
+%define	corner.5				 25
+%define	corner.6				 26
+%define	corner.7				 27
+%define	corner.8				 28
+%define	corner.9				 29
+%define	corner.10				 30
+%define	corner.11				 31
+%define	corner				 32	[	for comparison purposes only
+
+%define	x.length				 14	[	Compensation for move.obj( train)s
+%define	y.length				 19
+
+%define	switch.x.1			 18	[  These are +5 from switch locations.
+%define	switch.x.2			 43
+%define	switch.x.3			 68
+%define	switch.x.4			 93
+%define	switch.x.5			119
+%define	switch.x.6			144
+							
+%define	ego.x.1				  7
+%define	ego.x.2				 32
+%define	ego.x.3				 57
+%define	ego.x.4				 82
+%define	ego.x.5				108
+%define	ego.x.6				134
+%define	ego.y.always			159
+
+%define	hand.left				  0	[	same as open/closed above
+%define	hand.right			  1	[		2f loop's cells
+%define	hand.down				  2
+%define	down					  2
+
+%define	station.wait.beginning	 90	[	Wait.1 timer values (times
+%define	station.wait.intermediate 45	[		9/second!)
+%define	station.wait.advanced	 15
+
+%define	correct.pay.beginning	 10	[	"pay" values.
+%define	correct.pay.intermediate	 20
+%define	correct.pay.advanced	 30
+
+%define	west.to.south			156	[	"do.a.corner" values.
+%define	south.to.west			157
+%define	south.to.east			158
+%define	east.to.south			159
+%define	east.to.north			160
+%define	north.to.west			161
+%define	north.to.east			162
+
+%define	go.east				  0	[	"next.loop" values for train
+%define	go.west				  1
+%define	go.south				  2
+%define	go.north				  3
+
+										
+
+					[	LOCAL VARIABLES:
+
+%define	train.arrived			lf0
+%define	ego.arrived			lf1
+%define	goal.toggle			lf2	[	Whether pick up or deliver.
+%define	moving.to.switch		lf3
+%define	ego.moving			lf4
+[%define	lf5
+%define	been.here.once.already	lf6
+%define	sound.done			lf7
+
+%define	station.wait.time		lcl0
+%define	do.a.corner			lcl1
+%define	repo.x				lcl2
+%define	repo.y				lcl3
+%define	next.dest				lcl4
+%define	sound.status			lcl5
+%define	corner.count			lcl6
+%define	previous.dest			lcl7
+%define	dest					lcl8
+%define	dest.x				lcl9
+%define	dest.y				lcl10
+%define	hand					lcl11
+%define	next.repo.x			lcl12
+%define	next.repo.y			lcl13
+%define	ego.dest.x			lcl14
+%define	goal					lcl15
+%define	next.loop				lcl16
+%define	switch.1				lcl17		[	Either open or closed.
+%define	switch.2				lcl18
+%define	switch.3				lcl19
+%define	switch.4				lcl20
+%define	switch.5				lcl21
+%define	switch.6				lcl22
+%define	town.cycle.time		lcl23
+
+%define	station.wait.timer		wait.1
+
+
+
+					[	WORLD'S MOST OBJECTS IN ONE ROOM:
+
+									[   alloc actual view#
+%object	a.train				obj.2	[	200	 172	  152v-162v
+%object	a.town.name.1			obj.3	[	300	 268   164v
+%object	a.town.name.4			obj.4	[	400	 268   164v
+
+%object	a.switch.1			obj.100.1	[	100 bytes each
+%object	a.switch.2			obj.100.2
+%object	a.switch.3			obj.100.3
+%object	a.switch.4			obj.100.4
+%object	a.switch.5			obj.100.5
+%object	a.switch.6			obj.100.6
+
+%object	a.town.1				obj.128.1
+%object	a.town.2				obj.128.2
+%object	a.town.3				obj.128.3
+%object	a.town.4				obj.128.4
+%object	a.town.5				obj.128.5
+%object	a.town.6				obj.128.6
+%object	a.town.7				obj.128.7
+%object	a.town.8				obj.128.8
+
+%object	a.turnout.1			obj.80.1
+%object	a.turnout.2			obj.80.2
+%object	a.turnout.3			obj.80.3
+%object	a.turnout.4			obj.80.4
+%object	a.turnout.5			obj.80.5
+%object	a.turnout.6			obj.80.6
+
+
+
+					[	INITIALIZE THIS ROOM:
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	set.horizon( 1);
+	set( no.script);
+	town.cycle.time = 4;
+	start.motion( ego);				[	To prevent time creeping upward.
+
+	load.logics( job.logics);
+	load.logics( earned.money.logics);
+
+	load.view( v.ego.train.job);
+	load.view( v.ego.train.job.walking);
+	load.view( v.tiny.town);
+	load.view( v.turnout.west.to.south); [	1
+	load.view( v.turnout.south.to.west); [	2
+	load.view( v.turnout.south.to.east); [	3 & 4
+	load.view( v.turnout.east.to.south); [	5
+	load.view( v.turnout.east.to.north); [	6
+	load.view( v.switch);
+	load.view( v.town.names);
+
+	load.view( v.train);
+	load.view( v.train.west.to.south);
+	load.view( v.train.south.to.west);
+	load.view( v.train.south.to.east);
+	load.view( v.train.east.to.south);
+	load.view( v.train.east.to.north);
+	load.view( v.train.north.to.west);
+	load.view( v.train.north.to.east);
+
+	load.sound( s.blip);
+	load.sound( s.wrong);
+	load.sound( m.job);
+	load.sound( s.game.over);
+	load.sound( s.train.whistle);
+	load.sound( s.train.starting);
+	load.sound( s.train.moving);
+	load.sound( s.train.stopping);
+
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	add.to.picture( v.town.names, 0, 0, 87, 26, 15, 15);	[cel #'s = town names -1
+[	add.to.picture( v.town.names, 0, 1, 15, 30, 15, 15);	[	now an object
+	add.to.picture( v.town.names, 0, 2, 62, 51, 15, 15);
+	add.to.picture( v.town.names, 0, 3, 28, 78, 15, 15);
+[	add.to.picture( v.town.names, 0, 4, 109, 73, 15, 15);	[	now an object
+	add.to.picture( v.town.names, 0, 5, 28, 102, 15, 15);
+	add.to.picture( v.town.names, 0, 6, 62, 102, 15, 15);
+	add.to.picture( v.town.names, 0, 7, 112, 103, 15, 15);
+
+	animate.obj( a.town.name.1);
+	position( a.town.name.1, 15, 30);
+	set.view( a.town.name.1, v.town.names);
+	set.cel( a.town.name.1, 1);
+	set.priority( a.town.name.1, 15);
+	stop.cycling( a.town.name.1);
+	draw( a.town.name.1);
+	stop.update( a.town.name.1);
+
+	animate.obj( a.town.name.4);
+	position( a.town.name.4, 109, 73);
+	set.view( a.town.name.4, v.town.names);
+	set.cel( a.town.name.4, 4);
+	set.priority( a.town.name.4, 15);
+	ignore.objs( a.town.name.4);
+	stop.cycling( a.town.name.4);
+	draw( a.town.name.4);
+	stop.update( a.town.name.4);
+
+
+	animate.obj( a.train);
+	set.view( a.train, v.train);
+	set.loop( a.train, facing.left);
+	set.priority( a.train, 14);
+	ignore.objs( a.train);
+	stop.cycling( a.train);
+	position( a.train, 96, 17);
+	work = 2;
+	step.size( a.train, work);
+
+
+	animate.obj( a.switch.1);
+	position( a.switch.1, 12, 155);
+	set.view( a.switch.1, v.switch);
+	set.cel( a.switch.1, 0);
+	set.priority( a.switch.1, 13);
+	stop.cycling( a.switch.1);
+	draw( a.switch.1);
+[	stop.update( a.switch.1);
+
+	animate.obj( a.switch.2);
+	position( a.switch.2, 37, 155);
+	set.view( a.switch.2, v.switch);
+	set.cel( a.switch.2, 0);
+	set.priority( a.switch.2, 13);
+	stop.cycling( a.switch.2);
+	draw( a.switch.2);
+[	stop.update( a.switch.2);
+
+	animate.obj( a.switch.3);
+	position( a.switch.3, 62, 155);
+	set.view( a.switch.3, v.switch);
+	set.cel( a.switch.3, 0);
+	set.priority( a.switch.3, 13);
+	stop.cycling( a.switch.3);
+	draw( a.switch.3);
+[	stop.update( a.switch.3);
+
+	animate.obj( a.switch.4);
+	position( a.switch.4, 87, 155);
+	set.view( a.switch.4, v.switch);
+	set.cel( a.switch.4, 0);
+	set.priority( a.switch.4, 13);
+	stop.cycling( a.switch.4);
+	draw( a.switch.4);
+[	stop.update( a.switch.4);
+
+	animate.obj( a.switch.5);
+	position( a.switch.5, 113, 155);
+	set.view( a.switch.5, v.switch);
+	set.cel( a.switch.5, 0);
+	set.priority( a.switch.5, 13);
+	stop.cycling( a.switch.5);
+	draw( a.switch.5);
+[	stop.update( a.switch.5);
+
+	animate.obj( a.switch.6);
+	position( a.switch.6, 138, 155);
+	set.view( a.switch.6, v.switch);
+	set.cel( a.switch.6, 0);
+	set.priority( a.switch.6, 13);
+	stop.cycling( a.switch.6);
+	draw( a.switch.6);
+[	stop.update( a.switch.6);
+
+
+	animate.obj( a.turnout.1);
+	position( a.turnout.1, 54, 20);
+	set.view( a.turnout.1, v.turnout.west.to.south);
+	set.cel( a.turnout.1, 0);
+	set.priority( a.turnout.1, 4);
+	stop.cycling( a.turnout.1);
+	draw( a.turnout.1);
+	stop.update( a.turnout.1);
+
+	animate.obj( a.turnout.2);
+	position( a.turnout.2, 53, 39);
+	set.view( a.turnout.2, v.turnout.south.to.west);
+	set.cel( a.turnout.2, 0);
+	set.priority( a.turnout.2, 4);
+	stop.cycling( a.turnout.2);
+	draw( a.turnout.2);
+	stop.update( a.turnout.2);
+
+	animate.obj( a.turnout.3);
+	position( a.turnout.3, 20, 67);
+	set.view( a.turnout.3, v.turnout.south.to.east);
+	set.cel( a.turnout.3, 0);
+	set.priority( a.turnout.3, 4);
+	stop.cycling( a.turnout.3);
+	draw( a.turnout.3);
+	stop.update( a.turnout.3);
+
+	animate.obj( a.turnout.4);
+	position( a.turnout.4, 20, 88);
+	set.view( a.turnout.4, v.turnout.south.to.east);
+	set.cel( a.turnout.4, 0);
+	set.priority( a.turnout.4, 4);
+	stop.cycling( a.turnout.4);
+	draw( a.turnout.4);
+	stop.update( a.turnout.4);
+
+	animate.obj( a.turnout.5);
+	position( a.turnout.5, 53, 88);
+	set.view( a.turnout.5, v.turnout.east.to.south);
+	set.cel( a.turnout.5, 0);
+	set.priority( a.turnout.5, 4);
+	stop.cycling( a.turnout.5);
+	draw( a.turnout.5);
+	stop.update( a.turnout.5);
+
+	animate.obj( a.turnout.6);
+	position( a.turnout.6, 100, 112);
+	set.view( a.turnout.6, v.turnout.east.to.north);
+	set.cel( a.turnout.6, 0);
+	set.priority( a.turnout.6, 4);
+	stop.cycling( a.turnout.6);
+	draw( a.turnout.6);
+	stop.update( a.turnout.6);
+
+
+	animate.obj( a.town.1);
+	position( a.town.1, 93, 18);
+	stop.update( a.turnout.5);
+	set.view( a.town.1, v.tiny.town);
+	cycle.frequency( a.town.1, town.cycle.time);
+	set.cel( a.town.1, 0);
+	set.priority( a.town.1, 15);
+	stop.cycling( a.town.1);
+	draw( a.town.1);
+	stop.update( a.town.1);
+
+	animate.obj( a.town.2);
+	position( a.town.2, 7, 30);
+	set.view( a.town.2, v.tiny.town);
+	cycle.frequency( a.town.2, town.cycle.time);
+	set.cel( a.town.2, 0);
+	set.priority( a.town.2, 15);
+	stop.cycling( a.town.2);
+	draw( a.town.2);
+	stop.update( a.town.2);
+
+	animate.obj( a.town.3);
+	position( a.town.3, 53, 51);
+	set.view( a.town.3, v.tiny.town);
+	cycle.frequency( a.town.3, town.cycle.time);
+	set.cel( a.town.3, 0);
+	set.priority( a.town.3, 15);
+	stop.cycling( a.town.3);
+	draw( a.town.3);
+	stop.update( a.town.3);
+
+	animate.obj( a.town.4);
+	position( a.town.4, 34, 65);
+	set.view( a.town.4, v.tiny.town);
+	cycle.frequency( a.town.4, town.cycle.time);
+	set.cel( a.town.4, 0);
+	set.priority( a.town.4, 15);
+	stop.cycling( a.town.4);
+	draw( a.town.4);
+	stop.update( a.town.4);
+
+	animate.obj( a.town.5);
+	position( a.town.5, 99, 74);
+	set.view( a.town.5, v.tiny.town);
+	cycle.frequency( a.town.5, town.cycle.time);
+	set.cel( a.town.5, 0);
+	set.priority( a.town.5, 15);
+	stop.cycling( a.town.5);
+	draw( a.town.5);
+	stop.update( a.town.5);
+
+	animate.obj( a.town.6);
+	position( a.town.6, 19, 103);
+	set.view( a.town.6, v.tiny.town);
+	cycle.frequency( a.town.6, town.cycle.time);
+	set.cel( a.town.6, 0);
+	set.priority( a.town.6, 15);
+	stop.cycling( a.town.6);
+	draw( a.town.6);
+	stop.update( a.town.6);
+
+	animate.obj( a.town.7);
+	position( a.town.7, 53, 103);
+	set.view( a.town.7, v.tiny.town);
+	cycle.frequency( a.town.7, town.cycle.time);
+	set.cel( a.town.7, 0);
+	set.priority( a.town.7, 15);
+	stop.cycling( a.town.7);
+	draw( a.town.7);
+	stop.update( a.town.7);
+
+	animate.obj( a.town.8);
+	position( a.town.8, 143, 103);
+	set.view( a.town.8, v.tiny.town);
+	cycle.frequency( a.town.8, town.cycle.time);
+	set.cel( a.town.8, 0);
+	set.priority( a.town.8, 15);
+	stop.cycling( a.town.8);
+	draw( a.town.8);
+	stop.update( a.town.8);
+
+
+	ego.location = 0;
+	x = 19;
+	y = ego.y.always;
+	position.f( ego, x, y);
+	set.priority( ego, 12);
+	set.view( ego, v.ego.train.job.walking);
+	hand = hand.down;
+	ignore.objs( ego);
+	observe.blocks( ego);
+	draw( ego);
+	reset( keep.cycling);
+	stop.cycling( ego);
+	stop.update( ego);
+
+	if (level == beginning)
+		{
+		correct.pay = correct.pay.beginning;
+		station.wait.time = station.wait.beginning;
+		speed = slow;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			correct.pay = correct.pay.intermediate;
+			station.wait.time = station.wait.intermediate;
+			speed = normal;
+			}
+		else
+			{
+			correct.pay = correct.pay.advanced;
+			station.wait.time = station.wait.advanced;
+			speed = halffast;
+			}
+		}
+
+
+	show.pic( );
+	call( job.logics);
+	return( );
+
+	}							[	END init.log
+
+
+if (current.status == waiting.to.leave)
+	{
+	erase( a.train);
+	goto exit;
+	}
+else
+	{
+	if (current.status == starting)
+		{
+		stop.update( ego);
+		goto exit;
+		}
+	else
+		{
+		if (current.status == ready.to.start)
+			{
+			current.status = playing.game;
+			draw( a.train);
+			dest = 1;
+			previous.dest = 22;
+			goal = dest;
+			set( train.arrived);			[	trigger station.wait below
+			set( keep.cycling);
+			set( sound.done);
+			sound.status = train.whistle;
+			}
+		}
+	}
+	
+
+[*****
+:use.it
+[*****
+
+if  (doit && 	   					[	if he wants to flip the switch
+	ego.location && 				[	and his hand is down, bring it
+	hand == down)					[	up.  (My, how sweet we are!)
+	{
+	reset( doit);
+	set( useit);
+	}
+
+
+if (useit)						[	The "useit" button moves Don's 
+	{							[	hand up and down, to and from
+	if (!ego.location)				[	the switch.
+		{
+		goto patch1;				[	He's walking, so stop him.
+		}
+	else
+		{
+		if (hand != down)
+			{
+			hand = down;
+			set.cel( ego, c.hand.down);
+			set.priority( ego, 12);
+			}
+		else
+			{
+			if (ego.location == 1)
+				{
+				hand = switch.1;
+				}
+			else
+				{
+				if (ego.location == 2)
+					{
+					hand = switch.2;
+					}
+				else
+					{
+					if (ego.location == 3)
+						{
+						hand = switch.3;
+						}
+					else
+						{
+						if (ego.location == 4)
+							{
+							hand = switch.4;
+							}
+						else
+							{
+							if (ego.location == 5)
+								{
+								hand = switch.5;
+								}
+							else
+								{
+								if (ego.location == 6)
+									{
+									hand = switch.6;
+									}
+								}
+							}
+						}
+					}
+				}
+			set.cel.f( ego, hand);
+			set.priority( ego, 14);
+			}
+		}
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (doit)							[	This button toggles the switch.
+	{
+	reset( doit);
+
+	if (!ego.location)
+		{
+		goto patch1;
+		}
+	else
+		{
+		if (ego.location == 1)
+			{
+			if (switch.1)
+				{
+				switch.1 = 0;
+				}
+			else
+				{
+				switch.1 = 1;
+				}
+			set.cel.f( a.switch.1, switch.1);
+			set.cel.f( a.turnout.1, switch.1);
+			set.cel.f( ego, switch.1);
+			force.update( a.turnout.1);
+			}
+		
+		if (ego.location == 2)
+			{
+			if (switch.2)
+				{
+				switch.2 = 0;
+				}
+			else
+				{
+				switch.2 = 1;
+				}
+			set.cel.f( a.switch.2, switch.2);
+			set.cel.f( a.turnout.2, switch.2);
+			set.cel.f( ego, switch.2);
+			force.update( a.turnout.2);
+			}
+		
+		if (ego.location == 3)
+			{
+			if (switch.3)
+				{
+				switch.3 = 0;
+				}
+			else
+				{
+				switch.3 = 1;
+				}
+			set.cel.f( a.switch.3, switch.3);
+			set.cel.f( a.turnout.3, switch.3);
+			set.cel.f( ego, switch.3);
+			force.update( a.turnout.3);
+			}
+		
+		if (ego.location == 4)
+			{
+			if (switch.4)
+				{
+				switch.4 = 0;
+				}
+			else
+				{
+				switch.4 = 1;
+				}
+			set.cel.f( a.switch.4, switch.4);
+			set.cel.f( a.turnout.4, switch.4);
+			set.cel.f( ego, switch.4);
+			force.update( a.turnout.4);
+			}
+		
+		if (ego.location == 5)
+			{
+			if (switch.5)
+				{
+				switch.5 = 0;
+				}
+			else
+				{
+				switch.5 = 1;
+				}
+			set.cel.f( a.switch.5, switch.5);
+			set.cel.f( a.turnout.5, switch.5);
+			set.cel.f( ego, switch.5);
+			force.update( a.turnout.5);
+			}
+		
+		if (ego.location == 6)
+			{
+			if (switch.6)
+				{
+				switch.6 = 0;
+				}
+			else
+				{
+				switch.6 = 1;
+				}
+			set.cel.f( a.switch.6, switch.6);
+			set.cel.f( a.turnout.6, switch.6);
+			set.cel.f( ego, switch.6);
+			force.update( a.turnout.6);
+			}
+		}
+	}
+
+		
+[*****
+:grand.central
+[*****
+
+if (train.arrived)					[	We're here.  Now what?
+	{
+	reset( train.arrived);
+	}
+else
+	{
+	goto no.input;
+	}
+
+
+if (dest == goal)					[	He finally got here!
+	{
+	:setting.new.goals				[	Pick next town.
+	random( 1, 8, goal);
+	if (goal == dest)
+		{
+		goto setting.new.goals;		[	Can't go to where we're at now
+		}
+
+	if (goal == 1)
+		{
+		start.update( a.town.1);
+		start.cycling( a.town.1);
+		}
+	else
+		{
+		if (goal == 2)
+			{
+			start.update( a.town.2);
+			start.cycling( a.town.2);
+			}
+		else
+			{
+			if (goal == 3)
+				{
+				start.update( a.town.3);
+				start.cycling( a.town.3);
+				}
+			else
+				{
+				if (goal == 4)
+					{
+					start.update( a.town.4);
+					start.cycling( a.town.4);
+					}
+				else
+					{
+					if (goal == 5)
+						{
+						start.update( a.town.5);
+						start.cycling( a.town.5);
+						}
+					else
+						{
+						if (goal == 6)
+							{
+							start.update( a.town.6);
+							start.cycling( a.town.6);
+							}
+						else
+							{
+							if (goal == 7)
+								{
+								start.update( a.town.7);
+								start.cycling( a.town.7);
+								}
+							else
+								{
+								start.update( a.town.8);
+								start.cycling( a.town.8);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	
+	if (!goal.toggle)				[	Drop your load, Donald.
+		{
+		if (been.here.once.already)
+			{
+			money.to.fix = earned.money;
+			add.cents = correct.pay;
+			call( earned.money.logics);
+			earned.money.x = 33;
+			earned.money.y = 24;
+			call( earned.money.logics);
+			}
+		else
+			{
+			set( been.here.once.already);	[	now he has!
+			}
+
+		display( 22, 9, 31);			[	"Pick up at
+		}
+	else
+		{
+		display( 22, 9, 32);			[	"Deliver to
+		}
+	toggle( goal.toggle);
+
+	y = 22;
+	x = 20;						[	x = 17 if setup x = 6;
+	set.text.attribute( 15, 0);
+	message = goal;
+	message += 20;					[	Town names are messages 21-28.
+	display.f( y, x, message);
+
+	station.wait.timer = station.wait.time;
+	stop.sound( );
+	set( sound.done);
+	sound.status = train.stopping;
+	[Let this fall through to following section to set up next destination!
+	}							[	END goal = dest
+
+
+
+[if ((dest == goal ||				[	this section gets done either way 
+[	 dest != goal))
+
+previous.dest = dest;				[	previous.dest = current.location
+if (previous.dest < town)			[	We're at a town.
+	{
+	if (previous.dest == 1)
+		{
+		dest = 11;
+		dest.x = 56;
+		dest.y = 17;
+		}
+
+	if (previous.dest == 2)
+		{
+		dest = 28;
+		dest.x = 10;
+		dest.y = 111;
+		}
+
+	if (previous.dest == 3)
+		{
+		dest = 24;
+		dest.x = 56;
+		dest.y = 64;
+		}
+
+	if (previous.dest == 4)
+		{
+		dest = 26;
+		dest.x = 148;
+		dest.x -= x.length;
+		dest.y = 64;
+		}
+
+	if (previous.dest == 5)
+		{
+		dest = 25;
+		dest.x = 102;
+		dest.y = 61;
+		dest.y += y.length;
+		}
+
+	if (previous.dest == 6)
+		{
+		dest = 29;
+		dest.x = 22;
+		dest.y = 111;
+		}
+
+	if (previous.dest == 7)
+		{
+		dest = 30;
+		dest.x = 56;
+		dest.y = 111;
+		}
+
+	if (previous.dest == 8)
+		{
+		dest = 22;
+		dest.x = 146;
+		dest.y = 14;
+		dest.y += y.length;
+		}
+
+	}
+else
+	{
+	if (previous.dest < turnout)				[	We're at a turnout.
+		{
+		if (previous.dest == 11)
+			{
+			if (switch.1)
+				{
+				dest = 12;
+				dest.x = 56;
+				dest.y = 36;
+				do.a.corner = west.to.south;
+				}
+			else
+				{
+				dest = 21;
+				dest.x = 10;
+				dest.y = 17;
+				}
+			}
+
+		if (previous.dest == 12)
+			{
+			if (switch.2)
+				{
+				dest = 23;
+				dest.x = 22;
+				dest.y = 36;
+				do.a.corner = south.to.west;
+				}
+			else
+				{
+				dest = 3;
+				dest.x = 56;
+				dest.y = 59;		[	dest24's y - 5y
+				}
+			}
+
+		if (previous.dest == 13)
+			{
+			if (switch.3)
+				{
+				dest = 4;
+				dest.x = 27;		[	dest13's x + 5x
+				dest.y = 64;
+				do.a.corner = south.to.east;
+				}
+			else
+				{
+				dest = 14;
+				dest.x = 22;
+				dest.y = 85;
+				}
+			}
+
+		if (previous.dest == 14)
+			{
+			if (switch.4)
+				{
+				dest = 15;
+				dest.x = 58;
+				dest.x -= x.length;
+				dest.y = 85;
+				do.a.corner = south.to.east;
+				}
+			else
+				{
+				dest = 6;
+				dest.x = 22;
+				dest.y = 106;		[	y less 5y
+				}
+			}
+
+		if (previous.dest == 15)
+			{
+			if (switch.5)
+				{
+				dest = 7;
+				dest.x = 56;
+				dest.y = 106;
+				do.a.corner = east.to.south;
+				}
+			else
+				{
+				dest = 27;
+				dest.x = 104;
+				dest.x -= x.length;
+				dest.y = 85;
+				}
+			}
+
+		if (previous.dest == 16)
+			{
+			if (switch.6)
+				{
+				dest = 5;
+				dest.x = 102;
+				dest.y = 66; [	dest25's y +5y.
+				dest.y += y.length;
+				do.a.corner = east.to.north;
+				}
+			else
+				{
+				dest = 31;
+				dest.x = 148;
+				dest.x -= x.length;
+				dest.y = 111;
+				}
+			}
+
+		}
+	else	[(previous.dest < corner)	[	We're at a corner.
+		{
+		if (previous.dest == 21)
+			{
+			dest = 2;
+			dest.x = 10;
+			dest.y = 42;
+			do.a.corner = west.to.south;
+			}
+
+		if (previous.dest == 22)
+			{
+			dest = 1;
+			dest.x = 90;
+			dest.y = 17;
+			do.a.corner = north.to.west;
+			}
+
+		if (previous.dest == 23)
+			{
+			dest = 13;
+			dest.x = 22;
+			dest.y = 64;
+			do.a.corner = west.to.south;
+			}
+
+		if (previous.dest == 24)		[	We only get here from
+			{					[	dest3 (dest4 skips to
+			dest = 26;			[	dest26!)
+			dest.x = 148;
+			dest.x -= x.length;
+			dest.y = 64;
+			do.a.corner = south.to.east;
+			}
+
+		if (previous.dest == 25)		[	likewise "   "   "
+			{
+			dest = 26;
+			dest.x = 148;
+			dest.x -= x.length;
+			dest.y = 64;
+			do.a.corner = north.to.east;
+			}
+
+		if (previous.dest == 26)
+			{
+			dest = 22;
+			dest.x = 146;
+			dest.y = 14;
+			dest.y += y.length;
+			do.a.corner = east.to.north;
+			}
+
+		if (previous.dest == 27)		[	16 to 5 skips 27
+			{
+			dest = 5;
+			dest.x = 102;
+			dest.y = 66;
+			dest.y += y.length;
+			do.a.corner = east.to.north;
+			}
+
+		if (previous.dest == 28)
+			{
+			dest = 16;  			[	skip both 29 and 30
+			dest.x = 104;
+			dest.x -= x.length;
+			dest.y = 111;
+			do.a.corner = south.to.east;
+			}
+		
+		if (previous.dest == 29)
+			{
+			dest = 16;  			[	skip dest30
+			dest.x = 104;
+			dest.x -= x.length;
+			dest.y = 111;
+			do.a.corner = south.to.east;
+			}
+
+		if (previous.dest == 30)
+			{
+			dest = 16;  			[	skip dest30
+			dest.x = 104;
+			dest.x -= x.length;
+			dest.y = 111;
+			do.a.corner = south.to.east;
+			}
+
+		if (previous.dest == 31)
+			{
+			dest = 8;
+			dest.x = 146;
+			dest.y = 102;
+			do.a.corner = east.to.north;
+			}
+		}
+	}
+	
+if (!do.a.corner && 
+	!station.wait.timer) 		[	Handle corners and stops separately.
+	{
+	step = 0;
+	move.obj.f( a.train, dest.x, dest.y, step, train.arrived);
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (do.a.corner)
+	{
+	if (do.a.corner == west.to.south)
+		{
+		repo.x = 0;
+		repo.y = 10;
+		next.repo.x = 0;
+		next.repo.y = 4;
+		next.loop = go.south;
+		}
+
+	if (do.a.corner == south.to.west)
+		{
+		repo.x = -9;
+		repo.y = 0;
+		next.repo.x = -2;
+		next.repo.y = 0;
+		next.loop = go.west;
+		}
+
+	if (do.a.corner == south.to.east)
+		{
+		repo.x = 0;
+		repo.y = 0;
+		next.repo.x = 0;
+		next.repo.y = 0;
+		next.loop = go.east;
+		}
+
+	if (do.a.corner == east.to.south)
+		{
+		repo.x = 7;[was 6
+		repo.y = 10;
+		next.repo.x = 5;
+		next.repo.y = 4;
+		next.loop = go.south;
+		}
+
+	if (do.a.corner == east.to.north)
+		{
+		repo.x = 7;[was 6
+		repo.y = 0;
+		next.repo.x = 5;
+		next.repo.y = 0;
+		next.loop = go.north;
+		}
+
+	if (do.a.corner == north.to.west)
+		{
+		repo.x = -9;
+		repo.y = -10;[was -8
+		next.repo.x = -2;
+		next.repo.y = -6;
+		next.loop = go.west;
+		}
+
+	if (do.a.corner == north.to.east)
+		{
+		repo.x = 0;
+		repo.y = -10;[was -8
+		next.repo.x = 0;
+		next.repo.y = -6;
+		next.loop = go.east;
+		}
+
+	corner.count = 4;
+	view = do.a.corner;
+	do.a.corner = 0;
+	}
+
+
+--corner.count;
+if (corner.count == 3)
+	{
+	set.view.f( a.train, view);
+	reposition( a.train, repo.x, repo.y);
+	}
+
+if (corner.count == 1)
+	{
+	set.view( a.train, v.train);
+	set.loop.f( a.train, next.loop);
+	reposition( a.train, next.repo.x, next.repo.y);
+	step = 0;
+	move.obj.f( a.train, dest.x, dest.y, step, train.arrived);
+	}
+
+
+--station.wait.timer;
+if (station.wait.timer == 1)			[	Turn all towns to "off."
+	{
+	step = 0;
+	move.obj.f( a.train, dest.x, dest.y, step, train.arrived);
+	set( sound.done);
+	stop.sound( );
+	sound.status = train.starting;
+
+	if (goal == 1)
+		{
+		set.cel( a.town.1, 0);
+		stop.update( a.town.1);
+		force.update( a.town.1);
+		}
+	else
+		{
+		if (goal == 2)
+			{
+			set.cel( a.town.2, 0);
+			stop.update( a.town.2);
+			force.update( a.town.2);
+			}
+		else
+			{
+			if (goal == 3)
+				{
+				set.cel( a.town.3, 0);
+				stop.update( a.town.3);
+				force.update( a.town.3);
+				}
+			else
+				{
+				if (goal == 4)
+					{
+					set.cel( a.town.4, 0);
+					stop.update( a.town.4);
+					force.update( a.town.4);
+					}
+				else
+					{
+					if (goal == 5)
+						{
+						set.cel( a.town.5, 0);
+						stop.update( a.town.5);
+						force.update( a.town.5);
+						}
+					else
+						{
+						if (goal == 6)
+							{
+							set.cel( a.town.6, 0);
+							stop.update( a.town.6);
+							force.update( a.town.6);
+							}
+						else
+							{
+							if (goal == 7)
+								{
+								set.cel( a.town.7, 0);
+								stop.update( a.town.7);
+								force.update( a.town.7);
+								}
+							else
+								{
+								set.cel( a.town.8, 0);
+								stop.update( a.town.8);
+								force.update( a.town.8);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+
+if (update.window == earned.money)
+	{
+	update.window = 0;
+	}
+
+
+if  (sound.done && 
+	current.status == playing.game)
+	{
+	reset( sound.done);
+	if (sound.status == train.whistle)
+		{
+		sound.status = train.starting;
+		sound( s.train.whistle, sound.done);
+		}
+	else
+		{
+		if (sound.status == train.starting)
+			{
+			sound.status = train.moving;
+			sound( s.train.starting, sound.done);
+			}
+		else
+			{
+			if (sound.status == train.moving)
+				{
+[				sound( s.train.moving, sound.done);
+				}
+			else
+				{
+				if (sound.status == train.stopping)
+					{
+					sound( s.train.stopping, sound.done);
+					}
+				}
+			}
+		}
+	}
+
+
+[*****
+:ego.movement
+[*****
+
+if (!ego.location &&				[	He's walkin', and wants
+	ego.dir != ego.left &&			[	to stop at the nearest switch.
+	ego.dir != ego.right &&
+	!moving.to.switch)
+	{
+	:patch1
+	set( moving.to.switch);
+	set( ego.moving);
+	if (ego.x > switch.x.5)
+		{
+		ego.dest.x = ego.x.6;
+[		start.update( a.switch.6);
+		}
+	else
+		{
+		if (ego.x > switch.x.4)
+			{
+			ego.dest.x = ego.x.5;
+[			start.update( a.switch.5);
+			}
+		else
+			{
+			if (ego.x > switch.x.3)
+				{
+				ego.dest.x = ego.x.4;
+[				start.update( a.switch.4);
+				}
+			else
+				{
+				if (ego.x > switch.x.2)
+					{
+					ego.dest.x = ego.x.3;
+[					start.update( a.switch.3);
+					}
+				else
+					{
+					if (ego.x > switch.x.1)
+						{
+						ego.dest.x = ego.x.2;
+[						start.update( a.switch.2);
+						}
+					else
+						{
+						ego.dest.x = ego.x.1;
+						}
+					}
+				}
+			}
+		}
+
+	hand = down;
+	step = 0;
+	move.obj.f( ego, ego.dest.x, ego.y, step, ego.arrived);
+	ego.dest.x = 0;
+	}
+
+
+if (!ego.moving)
+	{
+	if ((ego.dir == ego.left ||
+		ego.dir == ego.right))
+		{
+		set( ego.moving);
+		set.priority( ego, 12);
+		ego.location = 0;
+		set.view( ego, v.ego.train.job.walking);
+		set( keep.cycling);
+		reset( no.cycling);
+		}
+	else
+		{
+		ego.dir = 0;
+		stop.cycling( ego);
+		set( no.cycling);
+		}
+	}
+
+
+[x = 0;
+[y = ego.y;
+[y -= ego.y.always;
+[reposition( ego, x, y);
+
+
+if (ego.x > switch.x.5)
+	{
+[	start.update( a.switch.5);
+[	start.update( a.switch.6);
+[	stop.update( a.switch.1);
+	}
+else
+	{
+	if (ego.x > switch.x.4)
+		{
+[		start.update( a.switch.4);
+[		start.update( a.switch.5);
+[		stop.update( a.switch.3);
+[		stop.update( a.switch.6);
+		}
+	else
+		{
+		if (ego.x > switch.x.3)
+			{
+[			start.update( a.switch.3);
+[			start.update( a.switch.4);
+[			stop.update( a.switch.2);
+[			stop.update( a.switch.5);
+			}
+		else
+			{
+			if (ego.x > switch.x.2)
+				{
+[				start.update( a.switch.2);
+[				start.update( a.switch.3);
+[				stop.update( a.switch.1);
+[				stop.update( a.switch.4);
+				}
+			else
+				{
+				if (ego.x > switch.x.1)
+					{
+[					start.update( a.switch.1);
+[					start.update( a.switch.2);
+[					stop.update( a.switch.3);
+					}
+				else
+					{
+[					start.update( a.switch.1);
+[					stop.update( a.switch.2);
+					}
+				}
+			}
+		}
+	}
+
+
+if (ego.arrived)
+	{
+	reset( ego.arrived);
+	reset( moving.to.switch);
+	reset( ego.moving);
+
+	set.view( ego, v.ego.train.job);
+	reset( keep.cycling);
+	set( no.cycling);
+	stop.cycling( ego);
+	set.cel( ego, c.hand.down);
+	player.control( );
+
+	if (ego.x == ego.x.1)		{ego.location = 1;}
+	if (ego.x == ego.x.2)		{ego.location = 2;}
+	if (ego.x == ego.x.3)		{ego.location = 3;}
+	if (ego.x == ego.x.4)		{ego.location = 4;}
+	if (ego.x == ego.x.5)		{ego.location = 5;}
+	if (ego.x == ego.x.6)		{ego.location = 6;}
+	}
+
+
+[*****
+:exit							[(the dynamic tests for leaving room)
+[*****
+
+call( job.logics);

@@ -1,0 +1,31 @@
+[messages for room 33 -- store logics
+
+%message	16	"You have"
+%message	17	"Cost $"
+%message	18	""
+%message	19	""
+%message	20	""
+
+[	   ----->	|This is the longest toy nam| <----- max size of toy.name
+[			 |    |    |    |    |    |  Cost $   |
+[			 0    5    10   15   20   25 28
+
+%message	21	"Ladder to Treehouse"	[	Goofy's store
+%message	22	"Rope and Pulley"
+%message	23	"Tire Swing" 
+%message	24	"Old Box"
+%message	25	"Slide for Fort"	
+%message	26	"Treehouse Fireman's Pole"
+%message	27	"Hand Walking Rope" 		[	Mickey's store
+%message	28	"Trapeze Bar"
+%message	29	"Ship's Wheel"
+%message	30	"Trampoline"
+%message	31	"Catwalk to Rocket Slide"
+%message	32	"Somersault Bar"
+%message	33	"Swing"				[	Minnie's store
+%message	34	"Ladder to Rocket Ship"
+%message	35	"Rings"
+%message	36	"Rocking Horse"
+%message	37	"Tetherball and Pole"
+%message	38	"Parallel Bars"
+

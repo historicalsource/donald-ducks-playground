@@ -1,0 +1,133 @@
+[logics for room 35 -- dons.money.logics
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+[Main room logic sets "money.to.fix" & "add.dollars."  This dynamic catches 
+[them, recomputes earnings, and sets "update.window."  Main room catches
+["update.window" and sets "dons.money.x & y."  This logic catches them, and
+[prints the result.
+
+
+if (init.log)
+	{
+	}
+
+
+if (money.to.fix == dons.money)
+	{
+
+	if ((add.dollars || add.cents))
+		{
+		dons.cents += add.cents;
+		dons.dollars += add.dollars;
+		}
+	else
+		{
+		if ((sub.dollars || sub.cents))
+			{
+	
+			:do.sub.cents
+			if (dons.cents < sub.cents)
+				{
+				if (!dons.ten.cents)
+					{
+					if (!dons.dollars)
+						{
+						--dons.ten.dollars;
+						dons.dollars += 10;
+						}
+					--dons.dollars;
+					dons.ten.cents += 10;
+					}
+				dons.cents += 10;
+				--dons.ten.cents;
+				goto do.sub.cents;
+				}
+			dons.cents -= sub.cents;
+	
+			:do.sub.dollars
+			if (dons.dollars < sub.dollars)
+				{
+				--dons.ten.dollars;
+				dons.dollars += 10;
+				}
+			dons.dollars -= sub.dollars;
+			}
+		}
+	
+	update.window = money.to.fix;
+	money.to.fix = 0;
+	add.dollars = 0;
+	add.cents = 0;
+	sub.dollars = 0;
+	sub.cents = 0;
+
+	:do.add.cents
+	if (dons.cents > 9)
+		{
+		dons.cents -= 10;
+		++dons.ten.cents;
+		goto do.add.cents;
+		}
+	
+	:do.add.ten.cents
+	if (dons.ten.cents > 9)
+		{
+		dons.ten.cents -= 10;
+		++dons.dollars;
+		goto do.add.ten.cents;
+		}
+	
+	:do.add.dollars
+	if (dons.dollars > 9)
+		{
+		++dons.ten.dollars;
+		dons.dollars -= 10;
+		goto do.add.dollars;
+		}
+	return( );
+	}
+
+
+if (dons.money.y)					[	Display Don's stash.
+	{
+	message = dollar;
+	display.f( dons.money.y, dons.money.x, message);
+
+	++dons.money.x;
+	if (dons.ten.dollars)
+		{
+		++dons.ten.dollars;
+		display.f( dons.money.y, dons.money.x, dons.ten.dollars);
+		--dons.ten.dollars;
+		}
+	else
+		{
+		message = space;
+		display.f( dons.money.y, dons.money.x, message);
+		}
+
+	++dons.money.x;
+	++dons.dollars;
+	display.f( dons.money.y, dons.money.x, dons.dollars);
+	--dons.dollars;
+
+	++dons.money.x;
+	message = period;
+	display.f( dons.money.y, dons.money.x, message);
+
+	++dons.money.x;
+	++dons.ten.cents;
+	display.f( dons.money.y, dons.money.x, dons.ten.cents);
+	--dons.ten.cents;
+
+	++dons.money.x;
+	++dons.cents;
+	display.f( dons.money.y, dons.money.x, dons.cents);
+	--dons.cents;
+
+	dons.money.x = 0;
+	dons.money.y = 0;
+	}

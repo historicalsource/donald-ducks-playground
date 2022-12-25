@@ -1,0 +1,155 @@
+[logics for room 28 -- startup.logics
+
+%include "gamedefs"
+
+
+%message	21	"DP"
+%message	22	"\"Donald Duck's Playground\" is not playable on a monochrome monitor.
+ Please try again with a color monitor."
+
+
+if (monitor.type == mono)
+	{
+	print( 22);
+	quit( 1);
+	}
+
+set.game.id( 21);
+position( ego, 70, 140);
+speed = normal;
+changing.minutes.speed = 9;
+animation.interval = normal;
+configure.screen( 0, 21, 24);
+set.text.attribute( 15, 0);
+reset( demo);
+set( enable.menu);
+disable.item( cDummy);
+status.line.off();
+trace.info( lgc.trace, 2, 9);			[	sets: room, yTOP, lines tall
+
+if ((machine.type == PC		||
+	machine.type == JR		||
+	machine.type == TANDY	||
+	machine.type == APPLEII))
+	{
+	set( two.button.joystick);
+	}
+else
+	{
+	set( mouse.machine);
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+	}
+[test.room = 24;
+if (test.room)
+	{
+[		dons.dollars = 4;
+[		dons.ten.cents = 4;
+[		dons.cents = 4;
+[		one.count = 4;
+[		quarter.count = 1;
+[		dime.count = 1;
+[		nickel.count = 1;
+[		penny.count = 4
+[	
+[		set( debugging);
+[		set( enable.trace);
+[		player.control( );
+[		accept.input();
+[		speed = fast;
+[	 	level = advanced;
+	}
+else
+	{
+	if (!restart.in.progress)
+		{
+		program.control( );
+		prevent.input();
+		animation.interval = normal;
+		reset( enable.menu);
+		}
+	else
+		{
+		return();					[	Don't reassign keys.
+		}
+	}
+
+
+set.key( 0, 98, c.help);				[HELP
+set.key( 0, 59, c.help);				[F1
+set.key( 0, 60, c.sound.toggle);		[F2
+set.key( 0, 61, c.restart);			[F3
+set.key( 0, 62, c.echo.line);			[F4
+set.key( 0, 63, cGoToMainStreet);		[F5
+set.key( 0, 64, c.show.mem);			[F6
+set.key( 0, 65, c.show.priority);		[F7
+set.key( 0, 67, c.useit);			[F9
+set.key( 0, 68, c.doit);				[F10
+
+set.key( 3,  0, c.cancel.line);		[^C
+set.key( 5,  0, c.echo.line);			[^E
+set.key( 10, 0, c.init.joy);			[^J
+
+set.key( 18, 0, c.toggle.monitor);		[^R
+set.key( 19, 0, c.sound.toggle);		[^S
+set.key( 22, 0, c.version);			[^V
+
+set.key( 0, 32, c.debug);			[@D
+set.key( 0, 18, c.show.ego);			[@S
+[	set.key(0, 45, c.test);			[@X
+set.key( 0, 44, c.quit);				[@Z
+set.key( 0, 23, cObjInfo);			[@I
+set.key( 0, 50, c.show.mem);			[@M
+
+[	set.key( 9,  0, c.status);		[TAB
+[	set.key( 27, 0, c.pause);		[ESC
+
+set.key(  88, 0, c.doit);			[Z		Use X and Z as buttons.
+set.key(  90, 0, c.useit);			[X
+set.key( 120, 0, c.doit);			[z
+set.key( 122, 0, c.useit);			[x
+
+if (machine.type == AMIGA)
+	{
+	set.key( 27,  0, c.pause);		[ESC
+	}
+else
+	{
+	set.key( 27, 0, cMenu);			[ESC
+	}
+
+if (machine.type == TANDY)
+	{
+	set.key( 61, 0, cCrescendo);		[+
+	set.key( 45, 0, cDecrescendo);	[-
+	set.key( 43, 0, cCrescendo);		[+
+	}
+
+if (machine.type == JR)
+	{
+	set.key( 49, 0, c.help);			[1	Use the top row of numbers
+	set.key( 50, 0, c.sound.toggle);	[2	as function keys for juniors
+	set.key( 51, 0, c.restart);		[3
+	set.key( 52, 0, c.echo.line);		[4
+	set.key( 53, 0, cGoToMainStreet);	[5
+	set.key( 54, 0, c.show.mem);		[6
+	set.key( 55, 0, c.show.priority);	[7
+	set.key( 57, 0, c.useit);		[9
+	set.key( 48, 0, c.doit);			[0
+	}
+
+[	Assign joystick controllers.
+if (two.button.joystick)
+	{
+	set.key( joystick.low.byte, button0, c.doit);
+	set.key( joystick.low.byte, button1, cMenu);
+[		set.key( joystick.low.byte, button0, c.doit);
+[		set.key( joystick.low.byte, button1, c.useit);
+	}
+else
+	{
+	set.key( joystick.low.byte, button0, cMenu);
+	}
+

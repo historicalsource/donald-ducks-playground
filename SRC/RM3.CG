@@ -1,0 +1,109 @@
+[logics for room 3 -- rm.pick.a.level
+
+%include "gamedefs"
+%include "rm3.msg"
+
+
+%define	music.done			lf0
+
+
+if (init.log)
+	{
+	reset( enable.menu);
+
+	load.view( v.ego);
+	set.view( ego, v.ego);
+
+	load.sound( m.menu);
+	load.view( v.level.sign);
+
+	if (machine.type == ST)
+		{
+		work = pic.ST.rm3;
+		load.pic( work);
+		draw.pic( work);
+		}
+	else
+		{
+		load.pic( current.room);
+		draw.pic( current.room);
+		}
+
+
+	add.to.picture( v.level.sign, 0, 0, 20, 82, 15, 15);
+	add.to.picture( v.level.sign, 0, 1, 57, 82, 15, 15);
+	add.to.picture( v.level.sign, 0, 2, 106, 82, 15, 15);
+
+	x = 76;
+	y = 167;
+	position.f( ego, x, y);
+	set.loop( ego, facing.back);
+	set.cel( ego, 2);
+	draw( ego);
+
+	set( music.done);
+	set.horizon( 94);
+	show.pic( );
+
+	if (machine.type == ST)
+		{
+		print( 22);
+		}
+	else
+		{
+		print( 20);
+		}
+
+	clear.lines( 21, 24, 0);
+	display( 22, 0, 21);
+
+	return( );
+
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.menu, music.done);
+	}
+
+if (hit.special)
+	{
+	get.posn( ego, x, y);
+	if (x < 53)
+		{
+		level = beginning;
+		speed = normal;
+		}
+	else
+		{
+		if (x < 101)
+			{
+			level = intermediate;
+			speed = halffast;
+			}
+		else
+			{
+			level = advanced;
+			speed = halffast;
+			}
+		}
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (edge.ego.hit == top)
+	{
+	set( enable.menu);
+	disable.item( cDummy);
+	reset( no.script);
+	new.room( rm.menu.east);
+	}

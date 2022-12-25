@@ -1,0 +1,567 @@
+[logics for room 34 -- payroll logics
+
+%include "rm34.msg"
+%include "gamedefs"
+
+
+[	Once "move.coin" is set, move all money remaining coins (in 
+["local.?.count") to Don's stash, one coin at a time.  If the new coin 
+[gives too many of the higher coin, set "coin.to.fix", else set "move.coin" 
+[to move next coin down.
+
+[	If "coin.to.fix", stop moving coins down, and slowly pop coins off the 
+[problem pile until we take away the value of the next higher coin.  Then do 
+[a phony "move.coin", which the higher pile accepts, and fixes if necessary.
+
+[	When "move.coin" finds nothing left to move, we wait for buttonpress, 
+[then leave.
+
+
+%define	fix.coin.timer			tmp6
+%define	ego.cell				tmp7
+%define	coin.to.fix			tmp8
+%define	stupid.dime.patch		tf1
+
+
+if (init.log)
+	{
+	if (level == beginning)
+		{
+		speed = normal;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			speed = halffast;
+			}
+		else
+			{
+			speed = fast;
+			}
+		}
+	}
+
+
+if (current.status == waiting.to.leave)
+	{
+	goto the.end;
+	}
+
+
+[*****
+:move.a.coin		[	This section decides if Don's still got something 
+[*****			[	coming.  If so, we grab it, and slip it to him.
+
+if (move.coin)
+	{
+	speed = fast;
+	if (local.ten.count && move.coin)
+		{
+		reset( move.coin);
+		--local.ten.count;
+		coin.being.moved = ten;
+		cell = local.ten.count;
+		x = cg.ten.x;
+		if (!cell)
+			{
+			view = view.bill.blank;
+			y = cg.y;
+			}
+		else
+			{
+			view = view.bill.pile;
+			y = cg.pile.y;
+			}
+
+		target.x = br.ten.x;
+		target.y = br.y;
+		}
+
+	if (local.five.count && move.coin)
+		{
+		reset( move.coin);
+		--local.five.count;
+		coin.being.moved = five;
+		cell = local.five.count;
+		x = cg.five.x;
+		if (!cell)
+			{
+			view = view.bill.blank;
+			y = cg.y;
+			}
+		else
+			{
+			view = view.bill.pile;
+			y = cg.pile.y;
+			}
+
+		target.x = br.five.x;
+		target.y = br.y;
+		}
+
+	if (local.one.count && move.coin)
+		{
+		reset( move.coin);
+		--local.one.count;
+		coin.being.moved = one;
+		cell = local.one.count;
+		x = cg.one.x;
+		if (!cell)
+			{
+			view = view.bill.blank;
+			y = cg.y;
+			}
+		else
+			{
+			view = view.bill.pile;
+			y = cg.pile.y;
+			}
+
+		target.x = br.one.x;
+		target.y = br.y;
+		}
+
+	if (local.quarter.count && move.coin)
+		{
+		reset( move.coin);
+		--local.quarter.count;
+		coin.being.moved = quarter;
+		view = view.quarter;
+		cell = local.quarter.count;
+		x = cg.quarter.x;
+		y = cg.y;
+		target.x = br.quarter.x;
+		target.y = br.y;
+		}
+	
+	if (local.dime.count && move.coin)
+		{
+		reset( move.coin);
+		--local.dime.count;
+		coin.being.moved = dime;
+		view = view.dime;
+		cell = local.dime.count;
+		x = cg.dime.x;
+		y = cg.y;
+		target.x = br.dime.x;
+		target.y = br.y;
+		}
+	
+	if (local.nickel.count && move.coin)
+		{
+		reset( move.coin);
+		--local.nickel.count;
+		coin.being.moved = nickel;
+		view = view.nickel;
+		cell = local.nickel.count;
+		x = cg.nickel.x;
+		y = cg.y;
+		target.x = br.nickel.x;
+		target.y = br.y;
+		}
+
+	if (local.penny.count && move.coin)
+		{
+		reset( move.coin);
+		--local.penny.count;
+		coin.being.moved = penny;
+		view = view.penny;
+		cell = local.penny.count;
+		x = cg.penny.x;
+		y = cg.y;
+		target.x = br.penny.x;
+		target.y = br.y;
+		}
+
+	if (move.coin) [   If this is still set, there's nothing left to pay him.
+		{
+		reset( move.coin);
+		set( all.coins.moved);
+		display( 24, 0, 16);			[	"Press button to leave.
+		}
+	else
+		{
+		loop = 0;					[	same for all money.
+		priority = 4;
+		box = 4;
+		add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+		set.view( ego, v.ego.is.money);
+		set.loop.f( ego, loop);
+		set.cel.f( ego, coin.being.moved);
+		x += 3;
+		y = cg.y;
+		y += 4;
+		position.f( ego, x, y);
+		draw( ego);
+		step = 0;
+		move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+		}
+	}
+
+
+[*****
+:no.input
+[*****
+
+if (add.coin.to.bankroll)	[	The floating ego.coin is now on Don's side 
+	{					[	of the table.  Update his stash.
+	reset( add.coin.to.bankroll);
+	erase( ego);
+
+	if (coin.being.moved == ten)
+		{
+		if (ten.count < 9)
+			{
+			add.dollars = 10;
+			++ten.count;
+			cell = ten.count;
+			if (cell == 1)
+				{
+				view = view.ten;
+				cell = 0;
+				}
+			else
+				{
+				view = view.bill.pile;
+				target.y = br.pile.y;
+				}
+			}
+		else
+			{
+			print( 17);			[	"Spend some money, sucker
+			[ten.count is still = 9;	[	tough luck, kid.
+			}
+		}
+
+	if (coin.being.moved == five)
+		{
+		add.dollars = 5;
+		++five.count;
+		cell = five.count;
+		if (five.count > 9)
+			{
+			coin.to.fix = five;
+			}
+		if (cell == 1)
+			{
+			view = view.five;
+			cell = 0;
+			}
+		else
+			{
+			view = view.bill.pile;
+			target.y = br.pile.y;
+			}
+		}
+
+
+	if (coin.being.moved == one)
+		{
+		add.dollars = 1;
+		++one.count;
+		cell = one.count;
+		if (one.count > 9)
+			{
+			coin.to.fix = one;
+			}
+		if (cell == 1)
+			{
+			view = view.one;
+			cell = 0;
+			}
+		else
+			{
+			view = view.bill.pile;
+			target.y = br.pile.y;
+			}
+		}
+
+
+	if (coin.being.moved == quarter)
+		{
+		add.cents = 25;
+		++quarter.count;
+		view = view.quarter;
+		cell = quarter.count;
+		if (quarter.count > 9)
+			{
+			coin.to.fix = quarter;
+			}
+		}
+
+	if (coin.being.moved == dime)
+		{
+		add.cents = 10;
+		++dime.count;
+		view = view.dime;
+		cell = dime.count;
+		if (dime.count > 9)
+			{
+			coin.to.fix = dime;
+			}
+		}
+
+	if (coin.being.moved == nickel)
+		{
+		add.cents = 5;
+		++nickel.count;
+		view = view.nickel;
+		cell = nickel.count;
+		if (nickel.count > 9)
+			{
+			coin.to.fix = nickel;
+			}
+		}
+
+	if (coin.being.moved == penny)
+		{
+		add.cents = 1;
+		++penny.count;
+		view = view.penny;
+		cell = penny.count;
+		if (penny.count > 9)
+			{
+			coin.to.fix = penny;
+			}
+		}
+
+	sound( s.move.money, done);
+	coin.being.moved = 0;
+	money.to.fix = dons.money;
+	call( dons.money.logics);
+
+	if (coin.to.fix)
+		{
+		fix.coin.timer = changing.minutes.speed;
+		}
+	else
+		{
+		add.to.picture.f( view, loop, cell, target.x, target.y, priority, box);
+		target.x = 0;
+		target.y = 0;
+
+		if (stupid.dime.patch)		[	Not a pretty sight!
+			{
+			reset( stupid.dime.patch);
+			erase( ego);
+			coin.being.moved = quarter;
+			set.view( ego, v.ego.is.money);
+			set.loop( ego, 0);
+			set.cel.f( ego, coin.being.moved);
+			position( ego, br.dime.x, br.y);
+			draw( ego);
+			target.x = br.quarter.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		else
+			{
+			set( move.coin);
+			}
+		}
+	}							[	END add.coin.to.bankroll
+
+
+
+[		He's got too much of something!  Take some away, and give him 
+[			the next larger coin.
+
+--fix.coin.timer;
+if (fix.coin.timer == 1)
+	{
+
+	if (coin.to.fix)
+		{
+		sound( s.move.money, done);
+		}
+
+	if (coin.to.fix == penny)	[	He's got 10; give him 5 + a nickel.
+		{
+		--penny.count;
+		sub.cents = 1;
+		view = view.penny;
+		cell = penny.count;
+		x = br.penny.x;
+		y = br.y;
+		if (penny.count == 5)
+			{
+			coin.to.fix = 0;
+			coin.being.moved = nickel;
+			position( ego, br.penny.x, br.y);
+			target.x = br.nickel.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	if (coin.to.fix == nickel)		[Take away 5 and give him a quarter.
+		{
+		--nickel.count;
+		sub.cents = 5;
+		view = view.nickel;
+		cell = nickel.count;
+		x = br.nickel.x;
+		y = br.y;
+		if (nickel.count == 5)
+			{
+			coin.to.fix = 0;
+			coin.being.moved = quarter;
+			position( ego, br.nickel.x, br.y);
+			target.x = br.quarter.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	if (coin.to.fix == dime)		[Take away five dimes, and give 2 quarters.
+		{
+		--dime.count;
+		sub.cents = 10;
+		view = view.dime;
+		cell = dime.count;
+		x = br.dime.x;
+		y = br.y;
+		if (dime.count == 5)
+			{
+			coin.to.fix = 0;
+			set( stupid.dime.patch);
+			coin.being.moved = quarter;
+			position( ego, br.dime.x, br.y);
+			target.x = br.quarter.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	if (coin.to.fix == quarter)		[Take away 4 and give him a dollar.
+		{
+		--quarter.count;
+		sub.cents = 25;
+		view = view.quarter;
+		cell = quarter.count;
+		x = br.quarter.x;
+		y = br.y;
+		if (quarter.count == 6)
+			{
+			coin.to.fix = 0;
+			coin.being.moved = one;
+			position( ego, br.quarter.x, br.y);
+			target.x = br.one.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	if (coin.to.fix == one)			[Take away 5-ones; give him a five.
+		{
+		--one.count;
+		sub.dollars = 1;
+		view = view.bill.pile;
+		cell = one.count;
+		x = br.one.x;
+		y = br.pile.y;
+		if (one.count == 5)
+			{
+			coin.to.fix = 0;
+			coin.being.moved = five;
+			position( ego, br.one.x, br.y);
+			target.x = br.five.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	if (coin.to.fix == five)			[Take away 2-fives and give him a ten.	
+		{
+		--five.count;
+		sub.dollars = 5;
+		cell = five.count;
+		view = view.bill.pile;
+		x = br.five.x;
+		y = br.pile.y;
+		if (five.count == 8)
+			{
+			coin.to.fix = 0;	[	Used as a flag to reset time.
+			coin.being.moved = ten;
+			position( ego, br.five.x, br.y);
+			target.x = br.ten.x;
+			target.y = br.y;
+			step = 0;
+			move.obj.f( ego, target.x, target.y, step, add.coin.to.bankroll);
+			}
+		}
+
+	loop = 0;				  		[	always the same!
+	priority = 4;
+	add.to.picture.f( view, loop, cell, x, y, priority, box);
+
+	sound( s.move.money, done);
+	money.to.fix = dons.money;
+	call( dons.money.logics);
+
+	if (coin.to.fix)
+		{
+		fix.coin.timer = changing.minutes.speed;
+		}
+	else							[	We're moving ego to higher turf.
+		{
+		set.view( ego, v.ego.is.money);
+		set.cel.f( ego, coin.being.moved);
+		draw( ego);
+		}
+
+	}							[	END (coin.to.fix)
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (move.coin && change.room.control)
+	{
+	reset( move.coin);
+	if  (!fix.coin.timer && 
+		!coin.to.fix && 
+		current.status != wants.to.quit)
+		{
+		set.view( ego, v.ego.is.arrow);
+		set( ego.is.arrow);
+		position.f( ego, old.ego.x, old.ego.y);
+		draw( ego);
+		}
+	}	
+
+
+if (current.status != wants.to.quit && all.coins.moved)
+	{
+	current.status = waiting.to.leave;
+	}
+
+
+[*****
+:the.end
+[*****
+
+if (current.status == waiting.to.leave)
+	{
+	if ((have.key( ) || doit))
+		{
+		reset( no.script);
+		if (current.room == rm.payroll)
+			{
+			new.room( rm.menu.east);
+			}
+		else
+			{
+			new.room( rm.menu.west);
+			}
+		}
+	}

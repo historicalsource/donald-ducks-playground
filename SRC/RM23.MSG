@@ -1,0 +1,5 @@
+[messages for room 23 -- rm.toy.job
+
+%message	21	    "The Amquack Special will pass in"
+%message	22	         "  minutes,    seconds."
+

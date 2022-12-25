@@ -1,0 +1,776 @@
+[logics for room 18 -- rm.pg.east -- treehouse
+
+%include "rm18.msg"
+%include "gamedefs"
+
+
+%define	close.enough			15
+
+
+%define	ego.hit.ground			lf0
+%define	music.done			lf1
+%define	pulley.done			lf2
+%define	ego.arrived			lf3
+%define	toy.horse.next.frame	lf4
+
+
+%define	toy.in.hand			lcl0
+%define	toy.playing.on			lcl1
+
+%define	message.timer			wait.1
+%define	tunnel.timer			timer.1
+
+
+								[  alloc actual view#
+%object	a.toy.horse		obj.5	[   500	472	 136v-36v
+%object	a.tire			obj.6	[   600	522	 123v-23v
+%object	a.ships.wheel		obj.3	[   300	196	 129v-29v
+%object	a.pulley			obj.1	[   100	 94	 122v-22v
+[object	a.firemans.pole overlay.pic	[			 26v
+[object	a.ladder		 add.to.pic	[			 121v-21v
+
+
+if (init.log)
+	{
+	if (machine.type == ST)
+		{
+		set( enable.double.click);
+		}
+
+	set.horizon( 52);
+ 	
+	if (force.a.test)
+		{
+		get( i.toy.horse);
+		get( i.ladder);
+		get( i.tire);
+		get( i.firemans.pole);
+		get( i.ships.wheel);
+		get( i.pulley);
+		}
+
+	if (has( i.toy.horse))
+		{
+		load.view( v.ego.pg.toy.horse);
+		load.view( v.pg.toy.horse);
+		}
+
+	if (has( i.ladder))
+		{
+		load.view( v.ego.pg.ladder);
+		load.view( v.pg.ladder);
+		load.view( v.ego.pg.jumping);
+		load.sound( s.ego.jumping);
+		}
+
+	if (has( i.tire))
+		{
+		load.view( v.ego.pg.tire);
+		load.view( v.pg.tire);
+		}
+
+	if (has( i.firemans.pole))
+		{
+		load.view( v.ego.pg.firemans.pole);
+		work = pic.firemans.pole;
+		load.pic( work);
+		}
+
+	if (has( i.ships.wheel))
+		{
+		load.view( v.ego.pg.ships.wheel);
+		load.view( v.pg.ships.wheel);
+		}
+
+	if (has( i.pulley))
+		{
+		work = pic.pulley.rope.top;
+		load.pic( work);
+		load.view( v.ego.pg.pulley);
+		load.view( v.pg.pulley);
+		}
+
+	speed = halffast;
+
+	load.sound( m.playground);
+	set( music.done);
+	load.view( v.ego.pg);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	if (has( i.toy.horse))
+		{
+		animate.obj( a.toy.horse);
+		if (!toy.horse.y)
+			{
+			toy.horse.x = 12;
+			toy.horse.y = 150;
+			}
+		position.f( a.toy.horse, toy.horse.x, toy.horse.y);
+		set.view( a.toy.horse, v.pg.toy.horse);
+		draw( a.toy.horse);
+		}
+
+	if (has( i.ladder))
+		{
+		add.to.picture( v.pg.ladder, 0, 0, 105, 146, 13, 0);
+		}
+
+	if (has( i.tire))
+		{
+		animate.obj( a.tire);
+		position( a.tire, 83, 135);
+		set.view( a.tire, v.pg.tire);
+		ignore.objs( a.tire);
+		set.priority( a.tire, 13);
+		draw( a.tire);
+		}
+
+	if (has( i.firemans.pole))
+		{
+		work = pic.firemans.pole;
+		overlay.pic( work);
+		}
+
+	if (has( i.ships.wheel))
+		{
+		animate.obj( a.ships.wheel);
+		position( a.ships.wheel, 123, 93);
+		set.view( a.ships.wheel, v.pg.ships.wheel);
+		set.priority( a.ships.wheel, 14);
+		draw( a.ships.wheel);
+		}
+
+	if (has( i.pulley))
+		{
+		work = pic.pulley.rope.top;
+		overlay.pic( work);
+
+		animate.obj( a.pulley);
+		ignore.horizon( a.pulley);
+		position( a.pulley, 45, 20);
+		set.view( a.pulley, v.pg.pulley);
+		set.priority( a.pulley, 15);
+		draw( a.pulley);
+		}
+
+	if (demo)
+		{
+		ego.location = 0;
+		position( ego, 2, 131);
+		display( 22, 0, 18);
+		display( 23, 0, 19);
+		move.obj( ego, 64, 69, 0, ego.arrived);
+		}
+
+	set.view( ego, v.ego.pg);
+	draw( ego);
+	current.status = walking;
+	set( next.frame);
+	show.pic( );
+	return( );
+
+	}
+
+
+if (current.status == in.treehouse)
+	{
+	observe.blocks( ego);
+	ignore.horizon( ego);
+	if (posn( ego, 86, 71, 130, 83))
+		{
+		set.priority( ego, 13);
+		}
+	else
+		{
+		set.priority( ego, 14);
+		}
+	}
+else
+	{
+	if (current.status == climbing)
+		{
+		observe.blocks( ego);
+		ignore.horizon( ego);
+		set.priority( ego, 14);
+		}
+	else
+		{
+		if (current.status == on.pulley)
+			{
+			set.priority( ego, 15);
+			ignore.blocks( ego);
+			ignore.horizon( ego);
+			ignore.objs( ego);
+			}
+		else
+			{
+			if ((current.status == on.firemans.pole ||
+				current.status == jumping))
+				{
+				ignore.blocks( ego);
+				ignore.horizon( ego);
+				ignore.objs( ego);
+				set.priority( ego, 13);
+				}
+			else
+				{
+				observe.objects( ego);
+				observe.horizon( ego);
+				if (has( i.tire) && posn( ego, 68, 142, 92, 148))
+					{
+					observe.blocks( ego);
+					}
+				else
+					{
+					ignore.blocks( ego);
+					}
+				}
+			}
+		}
+	}
+	
+
+if (toy.horse.next.frame)
+	{
+	reset( toy.horse.next.frame);
+	draw( a.toy.horse);
+	}
+
+if (next.frame)
+	{
+	reset( next.frame);
+
+	if (has( i.tire))
+		{
+		stop.update( a.tire);
+		}
+
+	if (has( i.pulley))
+		{
+		stop.update( a.pulley);
+		}
+	}
+
+
+[*****
+:use.it
+[*****
+
+if (current.status != walking)
+	{
+	reset( useit);
+	}
+
+if (useit)
+	{
+	reset( useit);
+	}
+else
+	{
+	goto do.it;
+	}
+
+
+if (toy.in.hand)
+	{
+	if (toy.in.hand == toy.horse)
+		{
+		toy.in.hand = 0;
+		position.f( a.toy.horse, ego.x, ego.y);
+		if (posn( ego, 67, 133, 81, 138))
+			{
+			position( a.toy.horse, 62, 138);
+			}
+		else
+			{
+			if (posn( ego, 76, 138, 89, 149))
+				{
+				position( a.toy.horse, 76, 152));
+				}
+			}
+		draw( a.toy.horse);
+		get.posn( a.toy.horse, toy.horse.x, toy.horse.y);
+		}
+	}
+else
+	{
+	if (has( i.toy.horse))
+		{
+		distance( ego, a.toy.horse, work);
+		if (work < close.enough)
+			{
+			toy.in.hand = toy.horse;
+			start.update( a.toy.horse);
+			erase( a.toy.horse);
+			toy.horse.x = 0;
+			toy.horse.y = 0;
+			}
+		}
+	}
+	
+
+[*****
+:do.it
+[*****
+
+if (toy.in.hand)
+	{
+	reset( doit);
+	}
+
+if (doit)
+	{
+	reset( doit);
+	}
+else
+	{
+	goto no.input;
+	}
+
+
+if (current.status == playing.on.toy)
+	{
+	if (toy.playing.on == toy.horse)
+		{
+		current.status = walking;
+		set.view( ego, v.ego.pg);
+		work = 1;
+		cycle.time( ego, work);
+		start.motion( ego);
+
+		position.f( a.toy.horse, toy.horse.x, toy.horse.y);
+		set( toy.horse.next.frame);
+		x = old.ego.x;
+		y = old.ego.y;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		release.priority( ego);
+		player.control( );
+		reset( keep.cycling);
+		toy.playing.on = 0;
+		}
+
+	if (toy.playing.on == tire)
+		{
+		current.status = walking;
+		set.view( ego, v.ego.pg);
+		work = 1;
+		cycle.time( ego, work);
+		start.motion( ego);
+		x = old.ego.x;
+		y = old.ego.y;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		release.priority( ego);
+
+		draw( a.tire);
+		player.control( );
+		start.motion( ego);
+		set( next.frame);
+		reset( keep.cycling);
+		toy.playing.on = 0;
+		}
+
+	if (toy.playing.on == ships.wheel)
+		{
+		current.status = in.treehouse;
+		set.view( ego, v.ego.pg);
+		work = 1;
+		cycle.time( ego, work);
+		start.motion( ego);
+		x = old.ego.x;
+		y = old.ego.y;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+
+		draw( a.ships.wheel);
+		player.control( );
+		start.motion( ego);
+		set( next.frame);
+		reset( keep.cycling);
+		toy.playing.on = 0;
+		}
+	}
+else
+	{
+	if (has( i.toy.horse) && current.status == walking)
+		{
+		distance( ego, a.toy.horse, work);
+		if (work < close.enough && toy.in.hand != toy.horse)
+			{
+			toy.playing.on = toy.horse;
+			get.priority( a.toy.horse, work);
+			erase( a.toy.horse);
+
+			old.ego.x = ego.x;
+			old.ego.y = ego.y;
+			x = toy.horse.x;
+			y = toy.horse.y;
+			x -= ego.x;
+			y -= ego.y;
+			reposition( ego, x, y);
+			set.view( ego, v.ego.pg.toy.horse);
+			set.priority.v( ego, work);
+			work = 2;
+			cycle.time( ego, work);
+			stop.motion( ego);
+			current.status = playing.on.toy;
+			set( keep.cycling);
+			}
+		}
+		
+	if (!toy.playing.on && 
+		has( i.tire) && 
+		current.status == walking &&
+		posn( ego, 77, 135, 91, 146))
+		{
+		toy.playing.on = tire;
+		start.update( a.tire);
+		erase( a.tire);
+
+		set.view( ego, v.ego.pg.tire);
+		work = 2;
+		cycle.time( ego, work);
+		stop.motion( ego);
+		set.cel( ego, 0);
+		old.ego.x = ego.x;
+		old.ego.y = ego.y;
+		get.posn( a.tire, x, y);
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		set.priority( ego, 13);
+		current.status = playing.on.toy;
+		set( keep.cycling);
+		}
+
+	if  (!toy.playing.on && 
+		has( i.ships.wheel) && 
+		current.status == in.treehouse &&
+		posn( ego, 117, 87, 133, 93))
+		{
+		toy.playing.on = ships.wheel;
+		start.update( a.ships.wheel);
+		erase( a.ships.wheel);
+
+		set.view( ego, v.ego.pg.ships.wheel);
+		work = 2;
+		cycle.time( ego, work);
+		stop.motion( ego);
+		old.ego.x = ego.x;
+		old.ego.y = ego.y;
+		get.posn( a.ships.wheel, x, y);
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		current.status = playing.on.toy;
+		set( keep.cycling);
+		}
+
+	if  (!toy.playing.on && 
+		has( i.pulley) && 
+		current.status == in.treehouse &&
+		posn( ego, 50, 60, 62, 65))
+		{
+		current.status = climbing;
+		set.view( ego, v.ego.pg.ladder);
+		x = 56;					[	Where we want him to end up.
+		y = 55;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	}
+
+		
+[*****
+:no.input
+[*****
+
+if  (current.status == in.treehouse &&
+	posn( ego, 21, 77, 63, 85) &&
+	has( i.firemans.pole))
+	{
+	set( hit.special);				[	prevent walking in front of pole
+	}
+
+
+if (hit.special)
+	{
+	if (current.status == in.treehouse &&	[	handle the hole in the floor
+		posn( ego, 30, 71, 52, 79))
+		{
+		if (has( i.firemans.pole))
+			{
+			current.status = on.firemans.pole;
+			set.view( ego, v.ego.pg.firemans.pole);
+			work = 2;
+			cycle.time( ego, work);
+			target.x = 39;
+			}
+		else
+			{
+			current.status = jumping;
+			set.view( ego, v.ego.pg.jumping);
+			target.x = 41;
+			}
+		old.ego.x = ego.x;
+		old.ego.y = ego.y;
+		x = target.x;
+		y = 76;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+	
+		target.y = 143;
+		set.priority( ego, 13);
+		ignore.objects( ego);
+		ignore.blocks( ego);
+		step = 3;
+		move.obj.f( ego, target.x, target.y, step, ego.hit.ground);
+		program.control( );
+		stop.sound( );
+		reset( music.done);
+		sound( s.ego.jumping, music.done);
+		set( keep.cycling);
+		}
+	else
+		{
+		if (current.status == climbing)
+			{
+			if  (ego.dir == ego.up &&
+				posn( ego, 103, 95, 111, 98))		[	at top of rope ladder
+				{
+				current.status = in.treehouse;
+				set.view( ego, v.ego.pg);
+				x = -1;
+				y = -4;
+				reposition( ego, x, y);
+				}
+			else
+				{
+				if  (ego.dir == ego.down && 
+					posn( ego, 98, 142, 109, 145)) [ at bottom of rope ladder
+					{
+					current.status = walking;
+					release.priority( ego);
+					set.view( ego, v.ego.pg);
+					x = 101;
+					y = 155;
+					x -= ego.x;
+					y -= ego.y;
+					reposition( ego, x, y);
+					}
+				else
+					{
+					if  (ego.dir == ego.down &&
+						posn( ego, 54, 54, 61, 58)) [	bottom of pulley ladder
+						{
+						current.status = in.treehouse;
+						set.view( ego, v.ego.pg);
+						x = 58;
+						y = 64;
+						x -= ego.x;
+						y -= ego.y;
+						reposition( ego, x, y);
+						}
+					else			 [	at top of pulley ladder
+						{
+						if  (posn( ego, 54, 32, 61, 45) &&
+								(ego.dir == ego.up || 
+								 ego.dir == ego.up.left))
+							{
+							current.status = on.pulley;
+							toy.playing.on = pulley;
+							start.update( a.pulley);
+							erase( a.pulley);
+				 
+							set.priority( ego, 15); [ time to go flying
+							ignore.blocks( ego);
+							ignore.horizon( ego);
+							ignore.objs( ego);
+							x = 47;			[	Where ego ends up.
+							y = 28;
+							x -= ego.x;
+							y -= ego.y;
+							reposition( ego, x, y);
+							set.view( ego, v.ego.pg.pulley);
+							move.obj( ego, 0, 75, 0, pulley.done);
+							program.control( );
+							set( have.match);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+if  (has( i.ladder) && 
+	posn( ego, 98, 150, 109, 158) &&		[	Base of rope ladder
+	current.status == walking && 
+	(ego.dir == ego.up.right ||
+	ego.dir == ego.up))
+	{
+	if (toy.in.hand)
+		{
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 17);			[	"No climbing with toys!
+			message.timer = 44;
+			}
+		}
+	else
+		{
+		current.status = climbing;
+		set.view( ego, v.ego.pg.ladder);
+		x = 105;					[	Where we want him to end up.
+		y = 141;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	}
+else
+	{
+	if  (current.status == in.treehouse && 
+		ego.dir == ego.down &&
+		posn( ego, 101, 92, 111, 94))	 	[	Top of rope ladder
+		{
+		current.status = climbing;
+		observe.blocks( ego);
+		set.priority( ego, 14);
+		set.view( ego, v.ego.pg.ladder);
+		x = 105;
+		y = 102;
+		x -= ego.x;
+		y -= ego.y;
+		reposition( ego, x, y);
+		}
+	else
+		{
+		if  (!toy.playing.on && 		[	Put him on ladder to pulley
+			has( i.pulley) && 
+			current.status == in.treehouse &&
+			posn( ego, 50, 60, 62, 65) &&
+			(ego.dir == ego.up || 
+			 ego.dir == ego.up.right || 
+			 ego.dir == ego.up.left))
+			{
+			current.status = climbing;
+			set.view( ego, v.ego.pg.ladder);
+			x = 56;				[	Where we want him to end up.
+			y = 55;
+			x -= ego.x;
+			y -= ego.y;
+			reposition( ego, x, y);
+			}
+		}
+	}
+
+
+if (ego.hit.ground)
+	{
+	reset( ego.hit.ground);
+	toy.playing.on = 0;
+	set.view( ego, v.ego.pg);
+	work = 1;
+	cycle.time( ego, work);
+	step.size( ego, work);
+	x = 0;
+	y = 4;
+	reposition( ego, x, y);
+	set( next.frame);
+	current.status = walking;
+	observe.objects( ego);
+	observe.blocks( ego);
+	release.priority( ego);
+	reset( keep.cycling);
+	player.control( );
+	stop.sound( );
+	set( music.done);
+	}
+
+
+if (pulley.done)
+	{
+	toy.in.hand = 0;
+	edge.ego.hit = left;			[	This triggers new.room below
+	}
+
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.playground, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (demo && ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+	if (ego.location == 1)
+		{
+		move.obj( ego, 105, 69, 0, ego.arrived);
+		}
+	if (ego.location == 2)
+		{
+		move.obj( ego, 137, 101, 0, ego.arrived);
+		}
+	if (ego.location == 3)
+		{
+		set.loop( ego, facing.front);
+		move.obj( ego, 137, 160, 0, ego.arrived);
+		}
+	if (ego.location == 4)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 2, 160, 0, ego.arrived);
+		}
+	if (ego.location == 5)
+		{
+		set.loop( ego, facing.front);
+		move.obj( ego, 2, 166, 0, ego.arrived);
+		}
+	if (ego.location == 6)
+		{
+		reset( no.script);
+		new.room( rm.menu.east);
+		}
+	}
+
+if (edge.ego.hit == left)
+	{
+	if (toy.in.hand)
+		{
+		edge.ego.hit = 0;
+		--message.timer;
+		if (!message.timer)
+			{
+			print( 16);
+			message.timer = 44;
+			}
+		}
+	else
+		{
+		if (current.status == on.pulley)
+			{
+			erase( ego);
+			}
+		reset( no.script);
+		new.room( rm.pg.central);
+		}
+	}

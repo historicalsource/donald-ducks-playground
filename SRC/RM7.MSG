@@ -1,0 +1,10 @@
+[messages for room 7 -- rm.menu.east
+
+
+%message	16	"
+Donald wants to build a playground in"
+%message	17	"
+the park for his nephews.  He works in"
+%message	18	"
+these stores to earn money."
+

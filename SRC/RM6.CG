@@ -1,0 +1,240 @@
+[logics for room 6 -- rm.menu.west
+
+%include "rm6.msg"
+%include "gamedefs"
+
+
+%define	demo.delay.time		33
+
+%define	music.done			lf0
+%define	ego.arrived			lf1
+
+%define	demo.delay			lcl0
+
+%object	a.5.and.10			obj.14
+%object	a.fountain			obj.5
+
+
+if (init.log)
+	{
+	set.horizon( 40);
+
+	load.view( v.ego);
+	set.view( ego, v.ego);
+
+	load.view( v.5.and.10.sign);
+	load.view( v.hardware.sign);
+	load.view( v.fountain);
+
+	load.sound( m.menu);
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+	animate.obj( a.5.and.10);
+	ignore.blocks( a.5.and.10);
+	position( a.5.and.10, 2, 71);
+	set.priority( a.5.and.10, 15);
+	set.view( a.5.and.10, v.5.and.10.sign);
+	draw( a.5.and.10);
+	work = 4;
+	cycle.frequency( a.5.and.10, work);
+	
+	animate.obj( a.fountain);
+	ignore.blocks( a.fountain);
+	ignore.objs( a.fountain);
+	position( a.fountain, 130, 127);
+	set.priority( a.fountain, 15);
+	set.view( a.fountain, v.fountain);
+	set.view( a.fountain, v.fountain);
+	draw( a.fountain);
+
+
+	[				view, loop, cell, x, y, priority
+	add.to.picture( v.hardware.sign, 0, 0, 38, 69, 15, 15);
+	
+
+	if (going.to.menu)
+		{
+		reset( going.to.menu);
+		position( ego, 105, 96);
+		}
+	else
+		{
+		if (previous.room == rm.menu.east)
+			{
+			if (ego.y < 50)
+				{
+				ego.y = 50;
+				}
+			if (ego.y > 148)
+				{
+				ego.y = 148;
+				}
+			position.f( ego, ego.x, ego.y);
+			}
+		else
+			{
+			if (previous.store)
+				{
+				set.loop( ego, facing.right);
+				if (previous.store == rm.pg.south)
+					{
+					position( ego, 102, 54);
+					}
+				if (previous.store == rm.goofy.store)
+					{
+					position( ego, 89, 69);
+					}
+				if (previous.store == rm.mickey.store)
+					{
+					position( ego, 43, 115);
+					}
+				if (previous.store == rm.minnie.store)
+					{
+					position( ego, 15, 150);
+					}
+				}
+			else
+				{
+				position( ego, 105, 96);
+				}
+			}
+		}
+				
+	if (demo)
+		{
+		speed = normal;
+		ego.location = 0;
+		position( ego, 149, 102);
+		display( 22, 0, 16);
+		display( 23, 0, 17);
+		display( 24, 0, 18);
+		move.obj( ego, 98, 153, 0, ego.arrived);
+		}
+
+	previous.store = 0;
+
+	draw( ego);
+
+	set( music.done);
+
+	if (level == beginning)
+		{
+		speed = normal;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			speed = halffast;
+			}
+		else
+			{
+			speed = halffast;
+			}
+		}
+
+	show.pic( );
+	return( );
+	}
+
+			
+[*****
+:no.input
+[*****
+
+if (music.done)
+	{
+	reset( music.done);
+	sound( m.menu, music.done);
+	}
+
+
+[*****
+:exit							[	test for leaving the room
+[*****
+
+if (demo)
+	{
+	--demo.delay;
+	if (demo.delay == 1)
+		{
+		set( ego.arrived);
+		}
+	}
+
+if (demo && ego.arrived)
+	{
+	reset( ego.arrived);
+	++ego.location;
+	if (ego.location == 1)
+		{
+		move.obj( ego, 22, 153, 0, ego.arrived);
+		}
+	if (ego.location == 2)
+		{
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 3)
+		{
+		set.loop( ego, facing.right);
+		move.obj( ego, 59, 116, 0, ego.arrived);
+		}
+	if (ego.location == 4)
+		{
+		set.loop( ego, facing.left);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 5)
+		{
+		set.loop( ego, facing.right);
+		move.obj( ego, 93, 82, 0, ego.arrived);
+		}
+	if (ego.location == 6)
+		{
+		set.loop( ego, facing.left);
+		demo.delay = demo.delay.time;
+		}
+	if (ego.location == 7)
+		{
+		set.loop( ego, facing.right);
+		move.obj( ego, 108, 67, 0, ego.arrived);
+		}
+	if (ego.location == 8)
+		{
+		set.loop( ego, facing.back);
+		move.obj( ego, 108, 55, 0, ego.arrived);
+		}
+	if (ego.location == 9)
+		{
+		set.loop( ego, facing.left);
+		move.obj( ego, 99, 55, 0, ego.arrived);
+		}
+	if (ego.location == 10)
+		{
+		reset( no.script);
+		new.room( rm.pg.south);
+		}
+	}
+
+if (edge.ego.hit == right)
+	{
+	reset( no.script);
+	new.room( rm.menu.east);
+	}
+
+if (hit.special)
+	{
+	if (posn( ego, 96, 47, 98, 59))		{previous.store = rm.pg.south;}
+	if (posn( ego, 67, 60, 71, 72))		{previous.store = rm.goofy.store;}
+	if (posn( ego, 36, 96, 38, 119))		{previous.store = rm.mickey.store;}
+	if (posn( ego, 0, 130, 2, 153))		{previous.store = rm.minnie.store;}
+
+	if (previous.store)
+		{
+		reset( no.script);
+		new.room.f( previous.store);
+		}
+	}

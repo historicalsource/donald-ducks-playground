@@ -1,0 +1,1446 @@
+[logics for room 24 -- rm.airport.job
+
+%include "gamedefs"
+[%include "rm.msg"					[	NO messages in this room.
+
+
+[	Plane.location "walks" the plane through the entire room, from initial
+[landing sequence to ending takeoff.  The plane.timer just triggers it after
+[an interval.
+
+[	Truck.location and truck.timer work the same way.  However, it's reset
+[when the little, empty truck leaves the screen, so it can start all over.
+
+[	a.the.bag is the bag that Don always carries; when he faces sideways or
+[backwards it switches to an invisible view, but we reposition it so it
+[follows him around when "bag.in.hand."  (The sideways views show a fake bag.)
+
+[	The trailers and baggage are both handled in the style of the toys in the
+[toy store game, where there's only one view, but 3 loops of 10 cels each for
+[the various town.names.  The cels are 1 less than the number I use (so bag
+[number 0 == no bag at all).
+
+
+
+%define	the.bag.offset.x			  1
+%define	the.bag.offset.y			  1
+%define	plane.off.screen.time		 15
+%define	runway.y					 45
+%define	taxiway.y					 65
+%define	close.enough.beginning		 20
+%define	close.enough.intermediate	 18
+%define	close.enough.advanced		 16
+%define	time.before.departure		 98
+%define	truck.y					105
+%define	tractor.width				 22
+%define	trailer.width				 21
+%define	small.trailer.width			  6
+%define	tractor.x					111
+%define	trailer.1.x				 91
+%define	trailer.2.x				 71
+%define	trailer.3.x				 51
+%define	trailer.4.x				 31
+%define	truck.off.screen.time		  5
+%define	c.loaded					  0	[	small truck cell values
+%define	c.3/4.loaded				  1		
+%define	c.1/2.loaded				  2
+%define	c.1/4.loaded				  3
+%define	c.unloaded	  			  4
+%define	empty.truck.off.screen.time 	 48
+%define	bag.in.hand.y				142
+%define	ego.y.always				144
+%define	belt.y					154
+%define	dropped.belt.y				151
+%define	correct.pay.beginning		  3
+%define	correct.pay.intermediate		  6  
+%define	correct.pay.advanced		  9
+%define	incorrect.pay.beginning		  0
+%define	incorrect.pay.intermediate	  0
+%define	incorrect.pay.advanced		  0
+
+
+%define	plane.location			lcl0
+%define	ego.center.x			lcl1
+%define	truck.location			lcl2
+%define	trailer.1				lcl4	[	Don't renumber these, or...
+%define	trailer.2				lcl5
+%define	trailer.3				lcl6
+%define	trailer.4				lcl7
+%define	bag.in.hand			lcl9
+%define	cell.in.hand			lcl10
+%define	loop.in.hand			lcl11
+%define	bag.1				lcl12 [	...these either, cause the
+%define	bag.2				lcl13 [	"force.match" routine is hard-
+%define	bag.3				lcl14 [	wired for these var #'s.
+%define	bag.4				lcl15
+%define	bag.5				lcl16 [	These contain the baggage tag
+%define	bag.6				lcl17 [	number, or 0 if not drawn.
+[%define	lcl18 
+[%define	lcl19
+%define	the.bag				lcl20
+%define	last.ego.dir			lcl22
+%define	minutes				lcl23
+%define	ten.seconds			lcl24
+%define	seconds				lcl25
+%define	old.seconds			lcl26
+%define	bag.step.size			lcl27
+%define	ego.step.size			lcl28
+%define	close.enough			lcl29
+%define	bag.ptr				lcl30
+%define	trailer.ptr			lcl31
+%define	current.bag			lcl32
+%define	current.trailer		lcl33
+
+%define	plane.arrived			lf0
+%define	truck.arrived			lf1
+%define	start.a.bag			lf2
+%define	bag.at.trailer			lf3
+%define	game.over				lf4
+%define	bag.in.air			lf5
+%define	show.the.bag			lf6
+%define	dropped.a.bag			lf7
+%define	all.bags.gone			lf8
+%define	tractor.done			lf9
+%define	trailer.1.done			lf10
+%define	trailer.2.done			lf11
+%define	trailer.3.done			lf12
+%define	trailer.4.done			lf13
+
+%define	bag.timer				timer.1
+%define	truck.timer			timer.2
+%define	plane.timer			wait.2
+
+									[   alloc actual view#
+%object	a.plane				obj.14	[	1400  1356  81v-82v
+%object	a.tractor				obj.10	[	1000	  928  87v-88v
+%object	a.trailer.1			obj.5	[	 500	  488  85v
+%object	a.trailer.2			obj.500	[	 500	  488  85v
+%object	a.trailer.3			obj.640.1	[	 640	  488  85v
+%object	a.trailer.4			obj.640.2	[	 640	  488  85v
+
+%object	a.bag.1				obj.128.1	[	 128	  116  83v
+%object	a.bag.2				obj.128.2	[
+%object	a.bag.3				obj.128.3	[
+%object	a.bag.4				obj.128.4	[
+%object	a.bag.5				obj.128.5	[
+%object	a.bag.6				obj.128.6	[
+%object	a.the.bag				obj.2	[	 200	  116
+
+
+if (init.log)
+	{
+	set.horizon( 1);
+	set( no.script);
+
+
+	load.pic( current.room);
+	draw.pic( current.room);
+	discard.pic( current.room);
+
+
+	load.logics( job.logics);
+	load.logics( earned.money.logics);
+
+	load.view( v.airplane);
+	load.view( v.large.airplane);
+	load.view( v.ego.airport.hands.down);
+	load.view( v.ego.airport.hands.up);
+	load.view( v.ego.airport.throwing);
+	load.view( v.baggage);
+	load.view( v.invisible.baggage);
+	load.view( v.tractor);
+	load.view( v.trailer);
+	load.view( v.small.truck);
+
+	load.sound( s.game.over);
+	load.sound( s.ok);
+	load.sound( s.wrong);
+	load.sound( m.job);
+	load.sound( s.blip);
+	load.sound( s.airplane.landing);
+	load.sound( s.airplane.taking.off);
+
+
+	if (level == beginning)
+		{
+		correct.pay = correct.pay.beginning;
+		incorrect.pay = incorrect.pay.beginning;
+		close.enough = close.enough.beginning;
+		speed = normal;
+		ego.step.size = 2;	  		[	Don't let him escape 0 priority!
+		bag.step.size = 3;
+		}
+	else
+		{
+		if (level == intermediate)
+			{
+			correct.pay = correct.pay.intermediate;
+			incorrect.pay = incorrect.pay.intermediate;
+			close.enough = close.enough.intermediate;
+			speed = halffast;
+			ego.step.size = 2;
+			bag.step.size = 3;
+			}
+		else
+			{
+			correct.pay = correct.pay.advanced;
+			incorrect.pay = incorrect.pay.advanced;
+			close.enough = close.enough.advanced;
+			speed = fast;
+			ego.step.size = 3;
+			bag.step.size = 4;
+			}
+		}
+
+
+	animate.obj( a.tractor);
+	ignore.blocks( a.tractor);
+	ignore.objs( a.tractor);
+	stop.cycling( a.tractor);
+
+	animate.obj( a.plane);
+	ignore.blocks( a.plane);
+	ignore.objs( a.plane);
+	position( a.plane, 0, 20);
+	set.view( a.plane, v.airplane);
+	set.cel( a.plane, c.aimed.up);
+	stop.cycling( a.plane);
+
+	animate.obj( a.trailer.1);
+	ignore.blocks( a.trailer.1);
+	ignore.objs( a.trailer.1);
+	position( a.trailer.1, 0, truck.y);
+	set.view( a.trailer.1, v.trailer);
+	fix.loop(a.trailer.1);
+	stop.cycling( a.trailer.1);
+
+	animate.obj( a.trailer.2);
+	ignore.blocks( a.trailer.2);
+	ignore.objs( a.trailer.2);
+	position( a.trailer.2, 0, truck.y);
+	set.view( a.trailer.2, v.trailer);
+	fix.loop(a.trailer.2);
+	stop.cycling( a.trailer.2);
+
+	animate.obj( a.trailer.3);
+	ignore.blocks( a.trailer.3);
+	ignore.objs( a.trailer.3);
+	position( a.trailer.3, 0, truck.y);
+	set.view( a.trailer.3, v.trailer);
+	fix.loop(a.trailer.3);
+	stop.cycling( a.trailer.3);
+
+	animate.obj( a.trailer.4);
+	ignore.blocks( a.trailer.4);
+	ignore.objs( a.trailer.4);
+	position( a.trailer.4, 0, truck.y);
+	set.view( a.trailer.4, v.trailer);
+	fix.loop(a.trailer.4);
+	stop.cycling( a.trailer.4);
+
+	
+	animate.obj( a.bag.1);
+	position( a.bag.1, 144, belt.y);
+	set.view( a.bag.1, v.baggage);
+	fix.loop(a.bag.1);
+	stop.cycling( a.bag.1);
+	stop.motion( a.bag.1);
+	ignore.block( a.bag.1);
+	ignore.objs( a.bag.1);
+	step.size( a.bag.1, bag.step.size);
+
+	animate.obj( a.bag.2);
+	position( a.bag.2, 144, belt.y);
+	set.view( a.bag.2, v.baggage);
+	fix.loop(a.bag.2);
+	stop.cycling( a.bag.2);
+	stop.motion( a.bag.2);
+	ignore.block( a.bag.2);
+	ignore.objs( a.bag.2);
+	step.size( a.bag.2, bag.step.size);
+
+	animate.obj( a.bag.3);
+	position( a.bag.3, 144, belt.y);
+	set.view( a.bag.3, v.baggage);
+	fix.loop(a.bag.3);
+	stop.cycling( a.bag.3);
+	stop.motion( a.bag.3);
+	ignore.block( a.bag.3);
+	ignore.objs( a.bag.3);
+	step.size( a.bag.3, bag.step.size);
+
+	animate.obj( a.bag.4);
+	position( a.bag.4, 144, belt.y);
+	set.view( a.bag.4, v.baggage);
+	fix.loop(a.bag.4);
+	stop.cycling( a.bag.4);
+	stop.motion( a.bag.4);
+	ignore.block( a.bag.4);
+	ignore.objs( a.bag.4);
+	step.size( a.bag.4, bag.step.size);
+
+	animate.obj( a.bag.5);
+	position( a.bag.5, 144, belt.y);
+	set.view( a.bag.5, v.baggage);
+	fix.loop(a.bag.5);
+	stop.cycling( a.bag.5);
+	stop.motion( a.bag.5);
+	ignore.block( a.bag.5);
+	ignore.objs( a.bag.5);
+	step.size( a.bag.5, bag.step.size);
+
+	animate.obj( a.bag.6);
+	position( a.bag.6, 144, belt.y);
+	set.view( a.bag.6, v.baggage);
+	fix.loop(a.bag.6);
+	stop.cycling( a.bag.6);
+	stop.motion( a.bag.6);
+	ignore.block( a.bag.6);
+	ignore.objs( a.bag.6);
+	step.size( a.bag.6, bag.step.size);
+
+	animate.obj( a.the.bag);
+	position( a.the.bag, 144, belt.y);
+	set.view( a.the.bag, v.invisible.baggage);
+	fix.loop(a.the.bag);
+	stop.cycling( a.the.bag);
+	stop.motion( a.the.bag);
+	set.priority( a.the.bag, 14);
+	ignore.block( a.the.bag);
+	ignore.objs( a.the.bag);
+
+ 	
+	set.view( ego, v.ego.airport.hands.down);
+	set.loop( ego, facing.front);
+	position( ego, 70, ego.y.always);
+	observe.blocks( ego);
+	ignore.objects( ego);
+	draw( ego);
+	stop.update( ego);
+	step.size( ego, ego.step.size);
+
+
+	current.status = starting;
+	plane.location = 0;
+
+	show.pic( );
+	call( job.logics);
+	return( );
+
+	}
+
+
+
+if ((ego.dir == ego.up.right ||
+	ego.dir == ego.down.right))
+	{
+	ego.dir = last.ego.dir;
+	}
+else
+	{
+	if ((ego.dir == ego.up.left ||
+		ego.dir == ego.down.left))
+		{
+		ego.dir = last.ego.dir;
+		}
+	}
+
+
+if (current.status == starting)		[	dynamic will make us continue
+	{
+	stop.update( ego);
+	goto exit;
+	}
+else
+	{
+	if (current.status == ready.to.start)	[	set by dynamic
+		{
+		current.status = waiting.for.plane;
+		plane.timer = 20;			[	Just wait a second here!!
+		}
+	else
+		{
+		if (current.status == waiting.for.plane) [	set just above here
+			{
+			stop.update( ego);
+			}
+		else
+			{
+			if (current.status == waiting.for.truck) [	after plane stops
+				{
+				stop.update( ego);
+				}
+			else
+				{
+				if (current.status == truck.in.place) [	after truck stops
+					{
+					current.status = playing.game;
+					start.update( ego);
+					draw( a.the.bag);
+					last.ego.dir = ego.down;
+					update.window = update.all;
+					set( start.a.bag);
+					bag.timer = 40;
+					}
+				else
+					{
+					if (current.status == waiting.to.leave)
+						{
+						if (!game.over)
+							{	[	set by times.up or wants.to.quit
+							current.status = cleaning.up;
+							set( truck.arrived); [	move out vehicles
+							if (bag.in.air)
+								{
+								reset( bag.in.air);
+								set( bag.at.trailer);
+								}
+							}
+						else
+							{
+							goto exit;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+if (bag.in.hand)
+	{
+	if (ego.dir == ego.stopped && last.ego.dir == ego.down)
+		{
+		set( show.the.bag);
+		}
+	else
+		{
+		if (ego.dir == ego.down)
+			{
+			set( show.the.bag);
+			}
+		else
+			{
+			set.view( a.the.bag, v.invisible.baggage);
+			set.loop( a.the.bag, 0);
+			set.cel( a.the.bag, 0);
+			}
+		}
+
+	if (show.the.bag)
+		{
+		reset( show.the.bag);
+		set.view( a.the.bag, v.baggage);
+		set.loop.f( a.the.bag, loop.in.hand);
+		set.cel.f( a.the.bag, cell.in.hand);
+		get.posn( a.the.bag, source.x, source.y);	
+		x = ego.x;
+		y = ego.y;
+		x -= source.x;
+		y -= source.y;
+		x += the.bag.offset.x;
+		y -= the.bag.offset.y;
+		reposition( a.the.bag, x, y);
+		}
+	}
+
+if (ego.dir)						[	0 = stopped; !0 = moving.
+	{
+	last.ego.dir = ego.dir;
+	}
+
+
+[*****
+:do.it
+[*****
+
+if (doit && current.status == playing.game)
+	{
+	reset( doit);
+	}
+else
+	{
+	goto no.input;
+	}
+
+
+reset( have.match);
+if (!bag.in.hand)
+	{
+	if  (ego.dir != ego.down &&
+		last.ego.dir != ego.down)	[	He's not facing belt.
+		{
+		sound( s.wrong, done);
+		}
+	else				    			[	He wants to pick up some old bag!
+		{
+		if (!bag.in.hand && bag.1)
+			{
+			distance( ego, a.bag.1, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.1;
+				bag.1 = 0;
+				set.priority( a.bag.1, 4);
+				}
+			}
+	
+		if (!bag.in.hand && bag.2)
+			{
+			distance( ego, a.bag.2, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.2;
+				bag.2 = 0;
+				set.priority( a.bag.2, 4);
+				}
+			}
+	
+		if (!bag.in.hand && bag.3)
+			{
+			distance( ego, a.bag.3, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.3;
+				bag.3 = 0;
+				set.priority( a.bag.3, 4);
+				}
+			}
+	
+		if (!bag.in.hand && bag.4)
+			{
+			distance( ego, a.bag.4, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.4;
+				bag.4 = 0;
+				set.priority( a.bag.4, 4);
+				}
+			}
+	
+		if (!bag.in.hand && bag.5)
+			{
+			distance( ego, a.bag.5, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.5;
+				bag.5 = 0;
+				set.priority( a.bag.5, 4);
+				}
+			}
+	
+		if (!bag.in.hand && bag.6)
+			{
+			distance( ego, a.bag.6, work);
+			if (work < close.enough)
+				{
+				bag.in.hand = bag.6;
+				bag.6 = 0;
+				set.priority( a.bag.6, 4);
+				}
+			}
+	
+
+		if (!bag.in.hand)			[	There's nothing in front of him!
+			{
+			sound( s.wrong, done);
+			}
+		else
+			{
+			sound( s.ok, done);
+			cell.in.hand = bag.in.hand;
+			--cell.in.hand;
+
+			loop.in.hand = 0;
+			:loop1
+			if (cell.in.hand > 9)
+				{
+				cell.in.hand -= 10;
+				++loop.in.hand;
+				goto loop1;
+				}
+	
+			set.view( a.the.bag, v.baggage);
+			set.loop.f( a.the.bag, loop.in.hand);
+			set.cel.f( a.the.bag, cell.in.hand);
+			the.bag = bag.in.hand;
+			set.view( ego, v.ego.airport.hands.up);
+			get.posn( a.the.bag, source.x, source.y);
+			x = ego.x;
+			y = ego.y;
+			x -= source.x;
+			y -= source.y;
+			x += the.bag.offset.x;
+			y -= the.bag.offset.y;
+			reposition( a.the.bag, x, y);
+[			draw( a.the.bag);
+			}
+		}
+	}
+else [bag.in.hand					[He's got something & wants to drop it
+	{
+	if  (ego.dir != ego.up &&		[	Not facing belt or plane.
+		ego.dir != ego.down &&
+		last.ego.dir != ego.up &&
+		last.ego.dir != ego.down)
+		{
+		sound( s.wrong, done);
+		}
+	else
+		{
+		if ((ego.dir == ego.down ||	[   He wants to return it to the belt.
+			last.ego.dir == ego.down))
+			{
+			if  (bag.1 && bag.2 &&
+				bag.3 && bag.4 &&
+				bag.5 && bag.6)	[	Is anything in the way?
+				{
+				sound( s.wrong, done);
+				bag.timer = 20;	[	force an opening to occur
+				}
+			else					[	No bag in way.  Drop 'em, Donald.
+				{
+				sound( s.ok, done);
+				set( start.a.bag);
+				set( dropped.a.bag);
+
+				goto drop.a.bag;
+				}
+			}
+		else
+			{
+			if ((ego.dir == ego.up ||
+				last.ego.dir == ego.up))	[  He wants to toss some luggage.
+				{
+				ego.center.x = ego.x;
+				ego.center.x += 12;	[	view.6 is 24 wide!
+				if  (ego.center.x > trailer.4.x && 
+					ego.center.x < trailer.3.x)
+					{
+					work = trailer.4;
+					}
+				else
+					{
+					if  (ego.center.x > trailer.3.x && 
+						ego.center.x < trailer.2.x)
+						{
+						work = trailer.3;
+						}
+					else
+						{
+						if  (ego.center.x > trailer.2.x && 
+							ego.center.x < trailer.1.x)
+							{
+							work = trailer.2;
+							}
+						else
+							{
+							if  (ego.center.x > trailer.1.x && 
+								ego.center.x < tractor.x)
+								{
+								work = trailer.1;
+								}
+							else
+								{
+								work = 0;
+								}
+							}
+						}
+					}
+	
+				if (bag.in.hand != work)
+					{
+					sound( s.wrong, done);
+					}
+				else				[	it's a hit!
+					{
+					sound( s.ok, done);
+					bag.in.hand = 0;
+					cell.in.hand = 0;
+					loop.in.hand = 0;
+					the.bag = 0;
+					set( bag.in.air);
+					set.view( ego, v.ego.airport.throwing);
+					stop.motion( ego);
+					set.cel( ego, 0);
+					x = 1;
+					y = 0;
+					reposition( ego, x, y);
+					program.control( );
+					set( keep.cycling);
+					end.of.loop( ego, bag.at.trailer);
+					money.to.fix = earned.money;
+					add.cents = correct.pay;
+					call( earned.money.logics);
+					}
+				}
+			}
+		}
+	}
+
+	
+[*****
+:no.input
+[*****
+
+if (bag.at.trailer)
+	{
+	reset( bag.at.trailer);
+	reset( bag.in.air);
+	set.view( a.the.bag, v.invisible.baggage);
+	player.control( );
+	reset( keep.cycling);
+	set.view( ego, v.ego.airport.hands.down);
+	set.loop( ego, facing.back);
+	x = -1;
+	y = 0;
+	reposition( ego, x, y);
+	}
+
+if (bag.in.air)
+	{
+	if (ego.dir)
+		{
+		ego.dir = 0;
+		}
+	}
+
+
+[*****
+:plane.truth.department
+[*****
+
+--plane.timer;
+if (plane.timer == 1)
+	{
+	set( plane.arrived);
+	}
+
+
+if (plane.arrived)
+	{
+	reset( plane.arrived);
+	++plane.location;
+
+	if (plane.location == 1)			[	plane appears, stage.right!
+		{
+		current.status = waiting.for.plane;
+		draw( a.plane);
+		sound( s.airplane.landing, done);
+		move.obj( a.plane, 24, runway.y, 0, plane.arrived);
+		}
+
+	if (plane.location == 2)			[	plane near ground; level off.
+		{
+		set.cel( a.plane, c.level);
+		move.obj( a.plane, 132, runway.y, 0, plane.arrived);
+		}
+
+	if (plane.location == 3)			[	near right edge.  Erase & wait.
+		{
+		erase( a.plane);
+		plane.timer = plane.off.screen.time;
+		}
+
+	if (plane.location == 4)			[	wait's over.  Draw the big one!
+		{
+		++plane.location;			[	cheap patch!
+		}
+
+	if (plane.location == 5)			[	All in.
+		{
+		set.view( a.plane, v.large.airplane);
+		set.cel( a.plane, 0);
+		position( a.plane, 107, taxiway.y);
+		draw( a.plane);
+		move.obj( a.plane, 67, taxiway.y, 0, plane.arrived);
+		}
+
+	if (plane.location == 6)			[	Park that big sucker.
+		{
+		stop.update( a.plane);
+		truck.location = 0;
+		current.status = waiting.for.truck;
+		truck.timer = truck.off.screen.time;
+		}
+
+	if (plane.location == 7)			[	Move the big plane to left edge.
+		{
+		start.update( a.plane);
+		move.obj( a.plane, 1, taxiway.y, 0, plane.arrived);
+		}
+
+	if (plane.location == 8)
+		{
+		++plane.location;			[	cheaper
+		}
+
+	if (plane.location == 9)			[	Hit left edge.  Erase it.
+		{
+		erase( a.plane);
+		plane.timer = plane.off.screen.time;
+		}
+
+	if (plane.location == 10)		[	Time's up.  Draw it again.
+		{
+		stop.cycling( a.plane);
+		set.cel( a.plane, c.level);
+		set.view( a.plane, v.airplane);
+		position( a.plane, 1, runway.y);
+		draw( a.plane);
+		move.obj( a.plane, 44, runway.y, 0, plane.arrived);
+		sound( s.airplane.taking.off, done);
+		}
+
+	if (plane.location == 11)	  	[	Taxi on ground a little way.
+		{
+		move.obj( a.plane, 106, runway.y, 0, plane.arrived);
+		}
+
+	if (plane.location == 12)		[	Lift off!
+		{
+		set.cel( a.plane, c.aimed.up);
+		move.obj( a.plane, 132, 20, 0, plane.arrived);
+		}
+
+	if (plane.location == 13)		[	Bye, bye!
+		{
+		erase( a.plane);
+		current.status = waiting.to.leave;
+		set( game.over);
+		}
+	}
+
+
+[*****
+:baggage.handling
+[*****
+
+if (current.status == playing.game)
+	{
+	if (!start.a.bag)
+		{						[Old values were:
+								[	B:	random( 4, 20, bag.timer);
+								[	I:	random( 3, 12, bag.timer);
+								[	A:	random( 2,  9, bag.timer);
+								[QA didn't like:
+								[	random( 9, 24, bag.timer);
+								[	random( 8, 20, bag.timer);
+								[	random( 8, 16, bag.timer);
+
+		--bag.timer;				[	Cycles before next bag appears.
+		if (!bag.timer)
+			{
+			set( start.a.bag);
+			if (level == beginning)
+				{
+				random( 5, 20, bag.timer);
+				}
+			else
+				{
+				if (level == intermediate)
+					{
+					random( 4, 15, bag.timer);
+					}
+				else
+					{
+					random( 3, 10, bag.timer);
+					}
+				}
+			}
+		}
+	else
+		{
+		if (!dropped.a.bag)
+			{
+
+			[Don't reset( start.a.bag) here; they're looking for it down below.
+	
+			[	Force a match so we always have a bag onscreen that
+			[		matches some trailer onscreen!
+
+			reset( have.match);
+
+			trailer.ptr = 44;		[	trailers are vars 44 through 47
+			bag.ptr = 52;			[	bags are vars 52 through 59
+
+			:trailer.loop;
+
+			current.trailer =@ trailer.ptr;
+
+			:bag.loop;
+
+			current.bag =@ bag.ptr;
+			if (current.bag == current.trailer)
+				{
+				set( have.match);
+				}
+			else
+				{
+				++bag.ptr;
+				if (bag.ptr < 60)
+					{
+					goto bag.loop;
+					}
+				else
+					{
+					++trailer.ptr;
+					if (trailer.ptr < 48)
+						{
+						bag.ptr = 52;
+						goto trailer.loop;
+						}
+					}
+				}
+			
+			if (!have.match)		[	Force bag to match some trailer.
+				{
+				random( 44, 47, work);	[	var( 44 is lcl.4 is trailer.1 etc
+				cell =@ work;
+				}
+			else					[	Some bag matches some trailer.
+				{
+				if (level == beginning)
+					{
+					random( 1, 10, cell); [Where's this bag coming from?
+					}
+				else
+					{
+					if (level == intermediate)
+						{
+						random( 1, 20, cell);
+						}
+					else
+						{
+						random( 1, 30, cell);
+						}
+					}
+				}
+				
+			x = 1;	
+			y = belt.y;
+	
+			work = cell;				[	temp storage
+			--cell;
+			loop = 0;
+			:loop4
+			if (cell > 9)
+				{
+				cell -= 10;
+				++loop;
+				goto loop4;
+				}
+			}
+		else	 					[	Drop the bag now in Ego's hand
+			{
+
+			:drop.a.bag;
+
+			cell = cell.in.hand;
+			loop = loop.in.hand;
+			work = bag.in.hand;
+			x = ego.x;
+			x += the.bag.offset.x;
+			y = dropped.belt.y;
+
+			}
+
+
+		if (start.a.bag && !bag.1 && posn( a.bag.1, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.1 = work;
+			set.cel.f( a.bag.1, cell);
+			set.loop.f( a.bag.1, loop);
+			position.f( a.bag.1, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.1, 5);
+				move.obj( a.bag.1, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.1, 6);
+				move.obj( a.bag.1, 155, belt.y, 0, done);
+				}
+			}
+	
+		if (start.a.bag && !bag.2 && posn( a.bag.2, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.2 = work;
+			set.cel.f( a.bag.2, cell);
+			set.loop.f( a.bag.2, loop);
+			position.f( a.bag.2, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.2, 5);
+				move.obj( a.bag.2, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.2, 6);
+				move.obj( a.bag.2, 155, belt.y, 0, done);
+				}
+			}
+	
+		if (start.a.bag && !bag.3 && posn( a.bag.3, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.3 = work;
+			set.cel.f( a.bag.3, cell);
+			set.loop.f( a.bag.3, loop);
+			position.f( a.bag.3, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.3, 5);
+				move.obj( a.bag.3, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.3, 6);
+				move.obj( a.bag.3, 155, belt.y, 0, done);
+				}
+			}
+	
+		if (start.a.bag && !bag.4 && posn( a.bag.4, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.4 = work;
+			set.cel.f( a.bag.4, cell);
+			set.loop.f( a.bag.4, loop);
+			position.f( a.bag.4, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.4, 5);
+				move.obj( a.bag.4, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.4, 6);
+				move.obj( a.bag.4, 155, belt.y, 0, done);
+				}
+			}
+	
+		if (start.a.bag && !bag.5 && posn( a.bag.5, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.5 = work;
+			set.cel.f( a.bag.5, cell);
+			set.loop.f( a.bag.5, loop);
+			position.f( a.bag.5, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.5, 5);
+				move.obj( a.bag.5, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.5, 6);
+				move.obj( a.bag.5, 155, belt.y, 0, done);
+				}
+			}
+	
+		if (start.a.bag && !bag.6 && posn( a.bag.6, 139, 0, 159, 167))
+			{
+			reset( start.a.bag);
+			bag.6 = work;
+			set.cel.f( a.bag.6, cell);
+			set.loop.f( a.bag.6, loop);
+			position.f( a.bag.6, x, y);
+			if (dropped.a.bag)	
+				{
+				set.priority( a.bag.6, 5);
+				move.obj( a.bag.6, 155, dropped.belt.y, 0, done);
+				}
+			else
+				{
+				set.priority( a.bag.6, 6);
+				move.obj( a.bag.6, 155, belt.y, 0, done);
+				}
+			}
+	
+
+		if (dropped.a.bag && !start.a.bag)
+			{
+			reset( dropped.a.bag);
+			set.view( a.the.bag, v.invisible.baggage);
+			set.view( ego, v.ego.airport.hands.down);
+			bag.in.hand = 0;
+			cell.in.hand = 0;
+			loop.in.hand = 0;
+			}
+
+[		if still (start.a.bag), then all bags are already in use.  
+[		Leave it and dropped.a.bag set so we can try again next frame.
+
+		}
+	}
+	
+
+[*****
+:keep.on.truckin'			[	Handle the truck and trailers entering 
+[*****					[	from the left and leaving to the right.
+
+if (current.status == playing.game)
+	{
+	if (old.seconds != elapsed.seconds)
+		{
+		old.seconds = elapsed.seconds;
+
+		if (seconds)
+			{
+			--seconds;
+			}
+		else
+			{
+			if (ten.seconds)
+				{
+				--ten.seconds;
+				seconds = 9;
+				}
+			else
+				{
+				if (minutes)
+					{
+					--minutes;
+					ten.seconds = 5;
+					seconds = 9;
+					}
+				else
+					{
+					current.status = waiting.for.truck;
+					set( truck.arrived);
+					}
+				}
+			}
+		}
+	}
+
+
+--truck.timer;
+if (truck.timer == 1)
+	{
+	set( truck.arrived);
+	}
+
+
+if (truck.arrived)
+	{
+	reset( truck.arrived);
+	++truck.location;
+
+	if (truck.location == 1)			[	Timer expired.
+		{
+		if (current.status == cleaning.up)[Game's over.  Move out the plane.
+			{
+			set( plane.arrived);
+			}
+		else	 					[	Draw the tractor; start a round.
+			{
+			position( a.tractor, 0, truck.y);
+			set.view( a.tractor, v.tractor);
+			draw( a.tractor);
+			move.obj( a.tractor, tractor.x, truck.y, 0, truck.arrived);
+			truck.timer = tractor.width;
+			}
+		}
+
+	:pick.a.town
+	if  (truck.location > 1 && 		[   locations 2-5 are "draw a trailer"
+		truck.location < 6)
+		{
+		if (level == beginning)
+			{
+			random( 1, 10, cell);	[	Where's this truck coming from?
+			}
+		else
+			{
+			if (level == intermediate)
+				{
+				random( 1, 20, cell);
+				}
+			else
+				{
+				random( 1, 30, cell);
+				}
+			}
+
+		work = cell;				[	temp storage
+		--cell;
+
+		loop = 0;
+		:loop5
+		if (cell > 9)
+			{
+			cell -= 10;
+			++loop;
+			goto loop5;
+			}
+		} 
+
+	if (truck.location == 2)			[	draw trailer.1
+		{
+		trailer.1 = work;			[	This is 1 more than cell number
+		set.cel.f( a.trailer.1, cell);
+		set.loop.f( a.trailer.1, loop);
+		position( a.trailer.1, 1, truck.y);
+		draw( a.trailer.1);
+		move.obj( a.trailer.1, trailer.1.x, truck.y, 0, done);
+		truck.timer = trailer.width;
+		}
+
+	if (truck.location == 3)			[	draw trailer.2
+		{
+		if (work == trailer.1)
+			{
+			goto pick.a.town;
+			}
+		trailer.2 = work;
+		set.cel.f( a.trailer.2, cell);
+		set.loop.f( a.trailer.2, loop);
+		position( a.trailer.2, 1, truck.y);
+		draw( a.trailer.2);
+		move.obj( a.trailer.2, trailer.2.x, truck.y, 0, done);
+		truck.timer = trailer.width;
+		}
+
+	if (truck.location == 4)			[	draw trailer.3
+		{
+		if ((work == trailer.1 || work == trailer.2))
+			{
+			goto pick.a.town;
+			}
+		trailer.3 = work;
+		set.cel.f( a.trailer.3, cell);
+		set.loop.f( a.trailer.3, loop);
+		position( a.trailer.3, 1, truck.y);
+		draw( a.trailer.3);
+		move.obj( a.trailer.3, trailer.3.x, truck.y, 0, done);
+		truck.timer = trailer.width;
+		}
+
+	if (truck.location == 5)			[	draw trailer.4
+		{
+		if ((work == trailer.1 || work == trailer.2 || work == trailer.3))
+			{
+			goto pick.a.town;
+			}
+		trailer.4 = work;
+		set.cel.f( a.trailer.4, cell);
+		set.loop.f( a.trailer.4, loop);
+		position( a.trailer.4, 1, truck.y);
+		draw( a.trailer.4);
+		move.obj( a.trailer.4, trailer.4.x, truck.y, 0, done);
+		[tractor + all 4 trailers are on now, and moving to right.
+		}
+
+	if (truck.location == 6)			[	everything's in place at 
+		{						[	center.stage.  Stop 'em.
+		truck.timer = 5;			[	cut him a little slack!
+		minutes = 2;				[	This is real length of
+		seconds = 36;				[		time before truck leaves.
+		[Clock section above triggers "truck.arrived" to cue next paragraph.
+		}
+
+	if (truck.location == 7)			[nothing's happened since location.6
+	 	{
+		current.status = truck.in.place;
+
+		stop.update( a.tractor);
+		stop.update( a.trailer.1);
+		stop.update( a.trailer.2);
+		stop.update( a.trailer.3);
+		stop.update( a.trailer.4);
+
+		reset( all.bags.gone);
+		position( a.bag.1, 144, belt.y);
+		position( a.bag.2, 144, belt.y);
+		position( a.bag.3, 144, belt.y);
+		position( a.bag.4, 144, belt.y);
+		position( a.bag.5, 144, belt.y);
+		position( a.bag.6, 144, belt.y);
+		draw( a.bag.1);
+		draw( a.bag.2);
+		draw( a.bag.3);
+		draw( a.bag.4);
+		draw( a.bag.5);
+		draw( a.bag.6);
+		}
+
+	if (truck.location == 8)			[	This round's over.  Move 'em out.
+		{
+		if (current.status == playing.game)
+			{
+			current.status = waiting.for.truck;
+			}
+		reset( all.bags.gone);
+
+		erase( a.bag.1);
+		erase( a.bag.2);
+		erase( a.bag.3);
+		erase( a.bag.4);
+		erase( a.bag.5);
+		erase( a.bag.6);
+
+		bag.in.hand = 0;
+		cell.in.hand = 0;
+		loop.in.hand = 0;
+		set.view( a.the.bag, v.invisible.baggage);
+		force.update( a.the.bag);
+
+		set.view( ego, v.ego.airport.hands.down);
+		set.loop( ego, facing.back);
+		force.update( ego);
+		stop.update( ego);
+
+		start.update( a.tractor);
+		start.update( a.trailer.1);
+		start.update( a.trailer.2);
+		start.update( a.trailer.3);
+		start.update( a.trailer.4);
+		move.obj( a.tractor, screen.right, truck.y, 0, tractor.done);
+		move.obj( a.trailer.1, screen.right, truck.y, 0, trailer.1.done);
+		move.obj( a.trailer.2, screen.right, truck.y, 0, trailer.2.done);
+		move.obj( a.trailer.3, screen.right, truck.y, 0, trailer.3.done);
+		move.obj( a.trailer.4, screen.right, truck.y, 0, trailer.4.done);
+
+		[Trailer.4 sets timer to trigger next paragraph below.
+		}
+
+	if (truck.location == 9)			[	Off-screen timer's done.
+		{						[	Draw tiny.truck under plane wing.
+		set.view( a.tractor, v.small.truck);
+		work = 2;
+		cycle.frequency( a.tractor, work);
+		set.cel( a.tractor, c.loaded);
+		x = 124;
+		y = taxiway.y;
+		y += 3;	  				[	skip plane's block 
+		position.f( a.tractor, x, y);
+		set.priority( a.tractor, 14);
+		draw( a.tractor);
+		x = 93;
+		step = 0;
+		move.obj.f( a.tractor, x, y, step, truck.arrived);
+		}
+
+	if (truck.location == 10)		[	unload the tiny.truck
+		{
+		set.cel( a.tractor, c.3/4.loaded);
+		sound( s.blip, done);
+		x = 1;
+		y = taxiway.y;
+		y += 3;
+		step = 0;
+		move.obj.f( a.tractor, x, y, step, truck.arrived);
+		truck.timer = small.trailer.width;
+		}
+
+	if (truck.location == 11)
+		{
+		set.cel( a.tractor, c.1/2.loaded);
+		sound( s.blip, done);
+		truck.timer = small.trailer.width;
+		}
+
+	if (truck.location == 12)
+		{
+		set.cel( a.tractor, c.1/4.loaded);
+		sound( s.blip, done);
+		truck.timer = small.trailer.width;
+		}
+
+	if (truck.location == 13)
+		{
+		set.cel( a.tractor, c.unloaded);
+		sound( s.blip, done);
+		}
+
+	if (truck.location == 14)		[	at left.edge of screen.  Erase.
+		{
+		erase( a.tractor);
+		truck.location = 0;
+		truck.timer = truck.off.screen.time;
+		work = 1;
+		cycle.frequency( a.tractor, work);
+
+		}
+	}
+
+
+if (update.window == earned.money)
+	{
+	update.window = 0;
+	earned.money.x = 33;
+	earned.money.y = 24;
+	}
+
+
+if (tractor.done)
+	{
+	reset( tractor.done);
+	erase( a.tractor);
+	}
+
+if (trailer.1.done)
+	{
+	reset( trailer.1.done);
+	erase( a.trailer.1);
+	}
+
+if (trailer.2.done)
+	{
+	reset( trailer.2.done);
+	erase( a.trailer.2);
+	}
+
+if (trailer.3.done)
+	{
+	reset( trailer.3.done);
+	erase( a.trailer.3);
+	}
+
+if (trailer.4.done)
+	{
+	reset( trailer.4.done);
+	erase( a.trailer.4);
+	truck.timer = truck.off.screen.time;
+	}  
+
+
+[*****
+:exit							[(the dynamic tests for leaving room)
+[*****
+
+if (current.status == cleaning.up && doit)
+	{
+	[don't reset( doit); dynamic needs it.
+	set( game.over);
+	current.status = waiting.to.leave;
+	}
+
+if (bag.1 && posn( a.bag.1, 140, 0, 159, 166))		{bag.1 = 0;}
+if (bag.2 && posn( a.bag.2, 140, 0, 159, 166))		{bag.2 = 0;}
+if (bag.3 && posn( a.bag.3, 140, 0, 159, 166))		{bag.3 = 0;}
+if (bag.4 && posn( a.bag.4, 140, 0, 159, 166))		{bag.4 = 0;}
+if (bag.5 && posn( a.bag.5, 140, 0, 159, 166))		{bag.5 = 0;}
+if (bag.6 && posn( a.bag.6, 140, 0, 159, 166))		{bag.6 = 0;}
+									
+	
+[	[	Keep in case someone loses your baggage!
+[	if (bag.1)	{display( 22,  0, 2);}	else		{display( 22,  0, space);}
+[	if (bag.2)	{display( 22,  2, 3);}	else		{display( 22,  2, space);}
+[	if (bag.3)	{display( 22,  4, 4);}	else		{display( 22,  4, space);}
+[	if (bag.4)	{display( 22,  6, 5);}	else		{display( 22,  6, space);}
+[	if (bag.5)	{display( 22,  8, 6);}	else		{display( 22,  8, space);}
+[	if (bag.6)	{display( 22, 10, 7);}	else		{display( 22, 10, space);}
+[	get.posn( a.bag.4, work, y);
+[	get.posn( a.bag.5, message, y);
+[	%message	55 "%v49  %v50  %v51  "
+[	display( 22, 20, 55);
+
+
+call( job.logics);
+call( earned.money.logics);

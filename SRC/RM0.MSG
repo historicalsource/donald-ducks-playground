@@ -1,0 +1,73 @@
+[messages for room 0 -- executed before room logics
+
+
+%message	16	
+"\n\n
+  Donald Duck's Playground\n\n
+         by Al Lowe\n\n
+Version 1.75   June 25, 1987\n\n"
+
+%message	17	
+""
+[Sorry, but you can't see the help screen here.
+[Please try again elsewhere."
+
+%message	18	
+"%m20off."
+
+%message	19	
+"%m20on."
+
+%message	20	
+"Sound is "
+
+%message	21	
+"Sorry, but you can't change monitor modes here.
+  Please try again outside."
+
+
+[	Menu functions are assigned to messages #22 - 35.
+
+%message	22		"Sierra "			[	
+%message	23	"About Donald"			[	
+%message	24	"Help    <F1>"			[	
+								[	
+%message	26		"File "			[	
+%message	27	"Restart  <F3>"		[	
+%message	28	"-------------"		[	
+%message	29	"Quit  <Alt-Z>"		[	
+
+%message	31	"Action "
+%message	32	"Do Something    <X>"	[
+%message	33	"To Main Street <F5>"	[
+%message	34	"Use Something   <Z>"	[
+
+%message	35		"Special "		[	
+%message	36	"Sound On/Off       <F2>"	[	
+%message	37	"Graphics Mode  <Ctrl-R>"	[	
+%message	38	"Joystick       <Ctrl-J>"	[	
+%message	39	"Pause Game             "	[	
+%message	40	"Joystick/Mouse <Ctrl-J>"	[	
+
+
+%message	41
+"You've been playing for "
+
+%message	42
+"%v12 minutes and %v11 seconds.\n\n"
+
+%message	43
+"%v14 days, %v13 hours, %m41"
+
+%message	44
+"%m16\n
+%m41%m43"
+
+%message	45
+"%m16\n
+%m41%v13 hours, %m42"
+
+%message	46
+"%m16\n
+%m41%m42"
+
